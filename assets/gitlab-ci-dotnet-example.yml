@@ -1,0 +1,109 @@
+# .gitlab-ci.yml — .NET 10 build & publish pipeline 範例
+# 對應 Module 3：自動化打包與持續整合
+# 教學重點：不管誰的機器、哪個 CI runner 執行，編出來的產物都要一樣（Dependency 鎖版本）
+# 前提：
+#   - csproj（或 Directory.Build.props）設 <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>，
+#     並把各專案的 packages.lock.json commit 進 repo。沒有 lock file 時 --locked-mode 不會報錯，等於沒鎖。
+#   - 測試專案要加 JunitXml.TestLogger 套件，下面的 --logger "junit;..." 才能用。
+#   - Runner 要開 privileged，docker-build job 的 dind 才跑得起來。
+
+stages:
+  - build
+  - test
+  - package
+  - docker
+
+variables:
+  IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+  # build image 用明確 tag；要做到完全可重現，改成 digest（mcr.microsoft.com/dotnet/sdk:10.0@sha256:...）
+  DOTNET_SDK_IMAGE: "mcr.microsoft.com/dotnet/sdk:10.0"
+
+build:
+  stage: build
+  image: $DOTNET_SDK_IMAGE
+  script:
+    # 依 packages.lock.json 還原；lock file 跟專案宣告對不上就直接失敗（NU1004），不會偷偷升版
+    - dotnet restore --locked-mode
+    - dotnet build -c Release --no-restore
+  artifacts:
+    paths:
+      - "**/bin/Release/"
+      # obj/ 一定要帶，而且後面每個 job 都要先 restore（新 job 的 NuGet cache 是空的）。
+      # 實測（SDK 10）：少了 obj/ 或沒 restore，dotnet publish 會失敗（NETSDK1004／NETSDK1064），
+      # dotnet test --no-build 更糟——一個測試都沒跑，卻 exit 0
+      - "**/obj/"
+    expire_in: 1 hour
+
+build-frontend:
+  stage: build
+  image: node:22-alpine
+  script:
+    # 前端也一樣鎖版本：npm ci 只照 package-lock.json 裝，跟 package.json 對不上就失敗
+    - cd frontend
+    - npm ci --no-audit --no-fund
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 hour
+
+test:
+  stage: test
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - dotnet restore --locked-mode
+    - dotnet test -c Release --no-build --logger "junit;LogFilePath=../test-results.xml"
+  artifacts:
+    when: always          # 測試失敗那次的報告最重要，不能被丟掉
+    reports:
+      junit: "**/test-results.xml"
+
+publish:
+  stage: package
+  image: $DOTNET_SDK_IMAGE
+  script:
+    # Immutable Artifact 的第一步：這裡產出的東西，後面環境都直接用，不重新編譯
+    # 指定要發布的專案（路徑依實際 repo 調整）；對整個 solution 加 -o 會把測試專案也混進來
+    - dotnet restore --locked-mode
+    - dotnet publish src/Api/Api.csproj -c Release -o ./publish --no-build
+    # 前端建置好的靜態檔放進 wwwroot：前後端是同一份產物、同一個 image
+    - cp -R frontend/dist publish/wwwroot
+  artifacts:
+    paths:
+      - publish/
+    expire_in: 1 week
+
+docker-build:
+  stage: docker
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    # Dockerfile 只把 publish job 產出的 publish/ 複製進 aspnet runtime image（FROM aspnet:10.0 + COPY publish/ .），
+    # 不在 Dockerfile 裡重新編譯——image 裡就是測過的那份產物（Immutable Artifact）。
+    # Lab 範例專案的 Dockerfile 是多階段、從原始碼編譯，那是因為課堂沒有 CI；有 CI 時用上面這種寫法。
+    - docker build -t "$IMAGE_TAG" .
+    - docker push "$IMAGE_TAG"
+    # 版本號控管：commit SHA 當 image tag，追溯「這個版本是哪次 commit 建的」；
+    # 打 git tag 的正式版，同一個 image 再多掛一個 tag 名稱（不重新 build）
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+        docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# 【課堂討論】敏感資訊安全注入（對應 Module 2）：
+# - $CI_REGISTRY_USER / $CI_REGISTRY_PASSWORD 是 GitLab「預先定義」的變數：
+#   每個 job 自動產生、job 結束就失效，不用自己設，也不會寫進 repo。
+# - 自己的機密（例如 NUGET_API_KEY、部署機的 DEPLOY_SSH_KEY、DB 密碼）才到
+#   Settings → CI/CD → Variables 新增，勾選：
+#     Masked    → job log 裡印出來會變成 [MASKED]（值要符合遮蔽格式限制，例如至少 8 字元、單行）
+#     Protected → 只有 protected branch / tag 上的 pipeline 拿得到，
+#                 一般 MR 分支改 .gitlab-ci.yml 也拿不到正式環境的密碼
+# - Masked 只遮 log，不是加密：job 裡的程式仍讀得到明文，所以 Protected 更重要。

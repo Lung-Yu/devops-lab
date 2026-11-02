@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 產生 packages.lock.json 鎖住套件版本（要 commit 進版控） -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- 前端原始碼（frontend/）由 Vite 另外建置，不要被當成 .NET 專案的內容檔 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);frontend/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- /health 用來檢查 PostgreSQL 的套件（已經加好，學員不用 dotnet add package） -->
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+    <!-- 資料存取：EF Core + PostgreSQL；Module 6 的 Migration 也靠它 -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <!-- 只在產生 Migration 時用（dotnet ef），不會進發布的產物 -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

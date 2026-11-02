@@ -1,0 +1,37 @@
+# docker-compose.yml — 上機課共用環境設定（Module 2 + Module 4 共用）
+# 每位學員（或每組）在自己電腦跑一份，互不影響，不依賴 AIN 教室網路
+#
+# 用法：
+#   docker compose up -d mock-db mock-external-api
+#   docker compose stop mock-db          # 模擬「資料庫連不上」情境（M4 Lab 用）
+#   docker compose stop mock-external-api # 模擬「外部服務連不上」情境（M4 Lab 用）
+
+services:
+  mock-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpass
+      POSTGRES_DB: labdb
+    volumes:
+      - ./mock-db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro   # 另外建 labdb_qa / labdb_poc
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labuser -d labdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # 模擬 M4 Lab 裡「網路連線檢查」要打的外部依賴服務
+  # /health 固定回 200；上課示範「網路不通」時直接 docker compose stop mock-external-api
+  mock-external-api:
+    image: nginx:alpine
+    volumes:
+      - ./mock-external-api.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8081:80"
+
+networks:
+  default:
+    name: keypasco-devops-lab

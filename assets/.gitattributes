@@ -1,0 +1,3 @@
+# Windows 上 git clone 時保持 LF，否則 bash 讀 .sh / .env 會多出 \r 而失敗
+*.sh text eol=lf
+.env* text eol=lf
