@@ -30,7 +30,7 @@ powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 env
 bash tools/selftest.sh env
 ```
 
-各 Lab 的步驟看課堂發的 Lab 手冊。Java 背景的同學可以另外看 [`assets/spring-demo/README.md`](assets/spring-demo/README.md)，同樣的概念用 Spring Boot 做一次，只需要 Docker。
+環境啟動看 [`docs/00-quickstart.md`](docs/00-quickstart.md)，各 Lab 的步驟看 [`docs/README.md`](docs/README.md)。Java 背景的同學可以另外看 [`assets/spring-demo/README.md`](assets/spring-demo/README.md)，同樣的概念用 Spring Boot 做一次，只需要 Docker。
 
 ## 關於帳號密碼
 
