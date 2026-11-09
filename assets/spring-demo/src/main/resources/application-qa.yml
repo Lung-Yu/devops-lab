@@ -1,0 +1,1 @@
+# QA：沿用共用設定（JSON 日誌、INFO）；資料庫名稱由 .env.qa 的 DB_NAME 決定

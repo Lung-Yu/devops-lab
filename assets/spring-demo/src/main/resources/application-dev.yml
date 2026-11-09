@@ -1,0 +1,7 @@
+# Dev：一般文字格式、看得到 DEBUG，方便開發時讀（對應 appsettings.Development.json）
+logging:
+  structured:
+    format:
+      console: ""
+  level:
+    demo: DEBUG

@@ -1,0 +1,25 @@
+# 共用設定：變數名稱跟 assets/.env.* 一樣（DB_HOST、DB_NAME…），同一份 .env 給 .NET 和 Spring 用
+# 各環境差異放 application-<profile>.yml，用 SPRING_PROFILES_ACTIVE 切換（對應 .NET 的 ASPNETCORE_ENVIRONMENT）
+spring:
+  datasource:
+    # 表建在 spring_demo schema，跟 DeployLog（.NET）的表分開，同一個資料庫也不會互相干擾
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?currentSchema=spring_demo
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  flyway:
+    schemas: spring_demo
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+logging:
+  structured:
+    format:
+      console: ecs
+app:
+  # 冒號後面是空的預設值；沒有冒號的話，變數沒設時 Spring 會把字面字串 ${EXTERNAL_API_URL} 當成值
+  external-api-url: ${EXTERNAL_API_URL:}

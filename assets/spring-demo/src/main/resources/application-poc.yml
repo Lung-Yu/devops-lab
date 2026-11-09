@@ -1,0 +1,5 @@
+# POC（模擬客戶端）：只留 WARN 以上，Flyway 的 migrate 紀錄例外保留（對應 appsettings.POC.json）
+logging:
+  level:
+    root: WARN
+    org.flywaydb: INFO
