@@ -14,16 +14,16 @@ docker compose version
 
 兩行都印出版本號就對了。
 
-## 2. 取得檔案，進到 `assets`
+## 2. 取得檔案，進到 `devops-lab`
 
 ```bash
 git clone https://github.com/Lung-Yu/devops-lab.git
-cd devops-lab/assets
+cd devops-lab
 ```
 
-沒有 git：到 <https://github.com/Lung-Yu/devops-lab> 按 **Code → Download ZIP**，解壓後進 `devops-lab-main/assets`。
+沒有 git：到 <https://github.com/Lung-Yu/devops-lab> 按 **Code → Download ZIP**，解壓後進 `devops-lab-main`。
 
-已經 clone 過：在 `assets` 裡跑 `git pull` 更新。之後所有指令都在 `assets` 下執行，資料夾名稱不要改。
+已經 clone 過：在 `devops-lab` 裡跑 `git pull` 更新。之後所有指令都在 `devops-lab` 這一層（看得到 `docker-compose.yml` 的地方）執行。
 
 ## 3. 環境檢查
 
@@ -62,9 +62,9 @@ docker image ls keypasco-lab-api
 
 ```bash
 # A. 自己 build（網路順、Mac 用這條；第一次約 1–3 分鐘以上）
-docker build -t keypasco-lab-api lab-project
+docker build -t keypasco-lab-api apps/dotnet-deploylog
 
-# B. 教室網路慢：跟講師拿 keypasco-lab-images-amd64.tar，放進 assets 後載入
+# B. 教室網路慢：跟講師拿 keypasco-lab-images-amd64.tar，放進 devops-lab 後載入
 docker load -i keypasco-lab-images-amd64.tar
 ```
 
@@ -108,7 +108,7 @@ Healthy
 第一次要下載 Maven、JDK 和套件，約 2–5 分鐘，需要連得到 Docker Hub 和 Maven Central。教室網路塞住就先跟著投影片，課後再做。
 
 ```bash
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 ```
 
 **PowerShell（Windows）**
@@ -135,7 +135,7 @@ curl http://localhost:8080/actuator/health
 |--------|------|
 | `docker` 找不到、`error during connect` | 打開 Docker Desktop，等 Engine running；重開一個終端機 |
 | `running scripts is disabled` | 照第 3 步的完整指令，不要直接打 `.\tools\selftest.ps1` |
-| `請在 assets/ 目錄下執行`、`no configuration file provided` | `cd` 回 `assets` |
+| `請在 devops-lab/ 根目錄下執行`、`no configuration file provided` | `cd` 回 `devops-lab` |
 | PowerShell 印出一大串 `StatusCode` | 改打 `curl.exe` |
 | `port is already allocated`（5432） | 暫停電腦上原本的 PostgreSQL |
 | Port 5000 被佔用（Mac 的 AirPlay） | 改成 `-p 5050:5000`，網址的 5000 改 5050 |

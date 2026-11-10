@@ -349,7 +349,7 @@ DeployLog 是課程自己寫的範例網站（不是任何客戶的系統），�
 
 # 第二部分：動手——把 DeployLog 跑起來
 
-以下指令都在 **`assets` 資料夾**下執行。開始前確認：
+以下指令都在 **`devops-lab` 資料夾**下執行。開始前確認：
 
 - [ ] [00 環境準備](00-setup.md) 做完了：`docker compose ps` 看得到 `mock-db` 是 `(healthy)`
 - [ ] `docker image ls keypasco-lab-api` 看得到 image
@@ -558,7 +558,7 @@ viewer 看不到「刪除」按鈕，只是畫面方便。真正的把關在後�
 
 （`traceId` 每次不同。）按 F12 開「開發人員工具」→「網路（Network）」重新整理，也可以看到狀態碼 401／403。
 
-> 規則寫在 `lab-project/Program.cs` 的 `AddAuthorizationBuilder()`（`CanEdit`、`AdminOnly` 兩條），端點用 `.RequireAuthorization("CanEdit")` 套用。**就算有人繞過畫面直接打 API，一樣會被擋。** M6 收尾會再談最小權限。
+> 規則寫在 `apps/dotnet-deploylog/Program.cs` 的 `AddAuthorizationBuilder()`（`CanEdit`、`AdminOnly` 兩條），端點用 `.RequireAuthorization("CanEdit")` 套用。**就算有人繞過畫面直接打 API，一樣會被擋。** M6 收尾會再談最小權限。
 
 ## 步驟 9：收掉
 
@@ -616,7 +616,7 @@ lab-api
 
 ## 程式設計：程式要怎麼寫才支援
 
-今天動手時的「同一個 image，先 `migrate` 再啟動網站」，是程式刻意設計出來的。`lab-project/Program.cs` 第 77–81 行：
+今天動手時的「同一個 image，先 `migrate` 再啟動網站」，是程式刻意設計出來的。`apps/dotnet-deploylog/Program.cs` 第 77–81 行：
 
 ```csharp
 var app = builder.Build();
@@ -626,7 +626,7 @@ if (args.FirstOrDefault() == "migrate")
     return await DbSetup.MigrateAsync(app.Services, config);
 ```
 
-Disposability（精華 4）也從 `lab-project/Dockerfile` 的最後一行開始：
+Disposability（精華 4）也從 `apps/dotnet-deploylog/Dockerfile` 的最後一行開始：
 
 ```dockerfile
 ENTRYPOINT ["dotnet", "MyApi.dll"]

@@ -1,7 +1,7 @@
 # 指令速查＋自我檢測
 
 > DevOps 實作課｜兩天課程的指令、檢查點、疑難排解一頁看完
-> 所有指令都在 `assets/` 目錄下執行（解壓 `keypasco-devops-lab.zip` 後的那個資料夾）。課堂的網站 port 是 **5000**；Mac 的 5000 被 AirPlay 佔用時，`-p 5000:5000` 改 `-p 5050:5000`、網址改 5050。
+> 所有指令都在 `devops-lab/` 根目錄下執行（解壓 `keypasco-devops-lab.zip` 後的那個資料夾）。課堂的網站 port 是 **5000**；Mac 的 5000 被 AirPlay 佔用時，`-p 5000:5000` 改 `-p 5050:5000`、網址改 5050。
 > 指令兩邊一樣時只寫一次；不一樣時分 **bash**（macOS／Linux）和 **PowerShell**（Windows）兩欄。
 
 ---
@@ -12,7 +12,7 @@
 
 | 做什麼 | 指令（bash／PowerShell 相同） |
 |-------|---------------------------|
-| 進到課程資料夾 | `cd assets` |
+| 進到課程資料夾 | `cd devops-lab` |
 | 啟動 mock DB 和 mock 外部服務 | `docker compose up -d mock-db mock-external-api` |
 | 看狀態（mock-db 要 `(healthy)`） | `docker compose ps` |
 | 模擬「資料庫連不上」 | `docker compose stop mock-db` |
@@ -28,7 +28,7 @@
 
 | 做什麼 | 指令（相同） |
 |-------|-----------|
-| 建置（第一次要下載約 1.7 GB base image） | `docker build -t keypasco-lab-api lab-project` |
+| 建置（第一次要下載約 1.7 GB base image） | `docker build -t keypasco-lab-api apps/dotnet-deploylog` |
 | 教室連不到網路時，從 USB 載入 | `docker load -i keypasco-lab-images-amd64.tar` |
 | 確認 image 在 | `docker image ls keypasco-lab-api` |
 
@@ -85,8 +85,8 @@ docker run -d --name lab-api -p 5000:5000 --env-file .env.poc @H keypasco-lab-ap
 
 | | bash | PowerShell |
 |---|------|-----------|
-| 跑自己的腳本 | `bash lab-m4-starter/start.sh .env.poc` | `powershell -ExecutionPolicy Bypass -File lab-m4-starter\start.ps1 .env.poc` |
-| 跑參考解答 | `bash solutions/start.sh .env.poc` | `powershell -ExecutionPolicy Bypass -File solutions\start.ps1 .env.poc` |
+| 跑自己的腳本 | `bash labs/m4-preflight/starter/start.sh .env.poc` | `powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start.ps1 .env.poc` |
+| 跑參考解答 | `bash labs/m4-preflight/solution/start.sh .env.poc` | `powershell -ExecutionPolicy Bypass -File labs\m4-preflight\solution\start.ps1 .env.poc` |
 | 看上一個指令的 exit code | `echo $?` | `$LASTEXITCODE` |
 
 全部通過時：
@@ -154,13 +154,13 @@ migrate 的預期訊息（每行一筆 JSON，看 `Message`）：第一次「已
 | 停掉 mock 服務（資料保留） | `docker compose stop` |
 | 停掉並刪除（下次重新建資料庫） | `docker compose down -v` |
 
-### 9. Java 組：spring-demo（09）
+### 9. Java 組：apps/java-spring-demo（09）
 
 先照第 3 組設好 `H`。
 
 | 做什麼 | bash | PowerShell |
 |-------|------|-----------|
-| 建 image | `docker build -t deploylog-spring spring-demo` | 同左 |
+| 建 image | `docker build -t deploylog-spring apps/java-spring-demo` | 同左 |
 | 用 POC 設定啟動（port 8080） | `docker run -d --name spring-api -p 8080:8080 --env-file .env.poc -e SPRING_PROFILES_ACTIVE=poc "${H[@]}" deploylog-spring` | `docker run -d --name spring-api -p 8080:8080 --env-file .env.poc -e SPRING_PROFILES_ACTIVE=poc @H deploylog-spring` |
 | liveness／readiness | `curl localhost:8080/actuator/health/liveness`（readiness 同理） | `curl.exe localhost:8080/actuator/health/liveness` |
 | 關掉自動 migrate | 啟動時加 `-e SPRING_FLYWAY_ENABLED=false` | 同左 |

@@ -13,7 +13,7 @@
 |------|--------|-----------|
 | 1 | 確認電腦夠用 | 記憶體 8 GB 以上、磁碟剩 5 GB 以上 |
 | 2 | 安裝 Docker | `docker version` 印得出 Server 版本 |
-| 3 | 解壓範例專案 | 有一個 `assets` 資料夾 |
+| 3 | 解壓範例專案 | 有一個 `devops-lab` 資料夾 |
 | 4 | 認識資料夾內容 | 知道每個檔案是哪個模組用的 |
 | 5 | 跑環境檢查 | `selftest env` 沒有 FAIL |
 | 6 | 啟動 mock 服務 | `mock-db` 是 `(healthy)` |
@@ -151,37 +151,37 @@ docker compose version
    - macOS：雙擊 zip，會在旁邊出現資料夾。
    - Linux：`unzip keypasco-devops-lab.zip`
 
-3. 解壓後會有一個 **`assets`** 資料夾（Windows 的「解壓縮全部」可能會多包一層 `keypasco-devops-lab\assets`，以裡面那個 `assets` 為準）。
+3. 解壓後會有一個 **`devops-lab`** 資料夾（Windows 的「解壓縮全部」可能會多包一層 `keypasco-devops-lab`，以裡面那個 `devops-lab` 為準）。用 git clone 的話就是 clone 下來的 `devops-lab`。
 
-4. 在終端機**進到 `assets` 資料夾**——之後所有指令都在這裡下：
+4. 在終端機**進到 `devops-lab` 資料夾**——之後所有指令都在這裡下：
 
    **PowerShell（Windows）**
 
    ```powershell
-   cd $HOME\Desktop\keypasco-devops-lab\assets
+   cd $HOME\Desktop\devops-lab
    dir
    ```
 
-   > 📷 待補截圖：PowerShell `dir` 列出 assets 內容（含 `.env.*`）（需在 Windows 教室電腦擷取）
+   > 📷 待補截圖：PowerShell `dir` 列出 devops-lab 內容（含 `.env.*`）（需在 Windows 教室電腦擷取）
 
    **bash（macOS／Linux）**
 
    ```bash
-   cd ~/Desktop/assets
+   cd ~/Desktop/devops-lab
    ls -a
    ```
 
-   路徑依你實際解壓的位置調整。小技巧：打 `cd ` 加一個空白，再把 `assets` 資料夾從檔案總管／Finder 拖進終端機視窗，路徑會自動填好。
+   路徑依你實際解壓的位置調整。小技巧：打 `cd ` 加一個空白，再把 `devops-lab` 資料夾從檔案總管／Finder 拖進終端機視窗，路徑會自動填好。
 
-   ![cd 進 assets、ls -a 列出所有檔案（含點開頭的 .env.*）](images/setup/05-ls-assets.png)
+   ![cd 進資料夾、ls -a 列出所有檔案（含點開頭的 .env.*）](images/setup/05-ls-assets.png)
 
    你應該看到（順序可能不同；bash 的 `ls -a` 另外會列出 `.` 和 `..`，代表「這一層」和「上一層」，不用理它）：
 
    ```
    .  ..
    .env.dev  .env.example  .env.poc  .env.qa  .gitattributes
-   docker-compose.yml  gitlab-ci-dotnet-example.yml  gitlab-ci-java-war-example.yml
-   lab-m4-starter  lab-project  mock-db-init.sql  mock-external-api.conf  solutions  spring-demo  tools
+   README.md  docker-compose.yml
+   apps  docs  instructor  labs  mock-services  tools
    ```
 
 **如果不是這樣**：沒看到 `.env.*` 這幾個檔是因為它們是「點開頭」的隱藏檔——bash 要用 `ls -a`；Windows 檔案總管要在「檢視」勾「隱藏的項目」，PowerShell 的 `dir` 本來就看得到。
@@ -191,35 +191,32 @@ docker compose version
 ## 4. 資料夾導覽：每個檔案是做什麼的
 
 ```
-assets/
-├── docker-compose.yml          課堂共用的 mock 服務：資料庫＋外部 API
-├── mock-db-init.sql            資料庫第一次啟動時多建 labdb_qa、labdb_poc 兩個庫
-├── mock-external-api.conf      假的外部服務（nginx），/health 永遠回 OK
-├── .env.dev / .env.qa / .env.poc   三個環境的設定檔（M2 主角）
-├── .env.example                設定檔範本
-├── .gitattributes              讓 Windows 上 git clone 時 .sh／.env 保持 LF 換行
-├── lab-project/                範例網站 DeployLog 的完整原始碼（.NET 10＋Vue3）
-│   ├── Dockerfile              三階段建置：Node 建前端 → .NET SDK 編後端 → 只留執行環境
-│   ├── README.md               網站架構、角色權限、怎麼跑
-│   └── ...
-├── lab-m4-starter/             M4 Lab 的起始檔：start.sh／start.ps1（要你補完）、start-naive.*（反面教材）
-├── solutions/                  M4 Lab 參考解答：start.sh／start.ps1
-├── spring-demo/                Java 組加碼：Spring Boot 對照範例（09 用）
-├── gitlab-ci-dotnet-example.yml      M3：.NET 專案的 GitLab CI 範例
-├── gitlab-ci-java-war-example.yml    M3：Java war 專案的 GitLab CI 範例
-└── tools/
-    ├── selftest.sh / selftest.ps1    環境與 Lab 自我檢查（下一步就用）
-    └── make-offline-bundle.sh        講師用：產生離線 image 包
+devops-lab/                      ← 所有指令都在這一層下
+├── README.md                    第一次來先看這份：資料夾地圖＋操作順序
+├── docker-compose.yml           課堂共用的 mock 服務：資料庫＋外部 API
+├── .env.dev / .env.qa / .env.poc    三個環境的設定檔（M2 主角）
+├── .env.example                 設定檔範本
+├── .gitattributes               讓 Windows 上 git clone 時 .sh／.env 保持 LF 換行
+├── apps/                        範例程式（被部署的對象）
+│   ├── dotnet-deploylog/        範例網站 DeployLog 完整原始碼（.NET 10＋Vue3），M1–M6 都用它
+│   └── java-spring-demo/        Java 組加碼：Spring Boot 對照範例（09 用）
+├── labs/                        各模組 Lab 的練習檔
+│   ├── m3-ci-pipeline/          M3：要推上 GitLab 的範例程式＋兩份 .gitlab-ci.yml 範例
+│   └── m4-preflight/            M4：預檢腳本起始檔（starter/）與參考解答（solution/）
+├── mock-services/               docker-compose.yml 用到的 mock 設定（資料庫初始化、假外部 API）
+├── tools/                       selftest（環境與 Lab 自我檢查）、講師用離線 image 打包
+├── docs/                        手把手教程（就是你正在看的這份）
+└── instructor/                  講師用：本機示範 GitLab（學員不用跑）
 ```
 
 | 檔案／資料夾 | 哪個模組用 | 一句話 |
 |------------|-----------|--------|
 | `docker-compose.yml` | M2、M4、M5、M6 | 起一個 PostgreSQL（`mock-db`，port 5432）和一個假外部服務（`mock-external-api`，port 8081） |
 | `.env.dev`／`.env.qa`／`.env.poc` | M2、M4、M6 | 同一個網站換這三份檔，就變成 Dev／QA／POC 三個環境 |
-| `lab-project/` | 全部 | 範例網站 DeployLog；M1 介紹、M2 換設定、M3 看 CI、M4 健康檢查、M5 看 log、M6 migrate |
-| `lab-m4-starter/`、`solutions/` | M4 | 部署前預檢腳本的起始檔和解答 |
-| `gitlab-ci-*.yml` | M3 | 兩份 pipeline 範例 |
-| `spring-demo/` | 09（Java 組） | 用 Spring Boot 把 M2／M4／M5／M6 再做一次，共用 mock-db 和 `.env.*` |
+| `apps/dotnet-deploylog/` | 全部 | 範例網站 DeployLog；M1 介紹、M2 換設定、M3 看 CI、M4 健康檢查、M5 看 log、M6 migrate |
+| `labs/m4-preflight/starter/`、`labs/m4-preflight/solution/` | M4 | 部署前預檢腳本的起始檔和解答 |
+| `labs/m3-ci-pipeline/` | M3 | 推上 GitLab 練習的範例程式（`sample-repo/`）＋兩份 pipeline 範例 |
+| `apps/java-spring-demo/` | 09（Java 組） | 用 Spring Boot 把 M2／M4／M5／M6 再做一次，共用 mock-db 和 `.env.*` |
 | `tools/selftest.*` | 課前 | 檢查你的電腦能不能上課 |
 
 `.env.dev` 長這樣（另外兩份只差 `ASPNETCORE_ENVIRONMENT` 和 `DB_NAME`）：
@@ -314,7 +311,7 @@ PowerShell 版長得幾乎一樣，差別是：沒有 `curl`／`lsof`／`pg_isre
 | 你看到 | 原因 | 處理 |
 |--------|------|------|
 | `... cannot be loaded because running scripts is disabled on this system` | PowerShell 執行原則擋腳本 | 照上面的寫法加 `-ExecutionPolicy Bypass -File`，不要直接打 `.\tools\selftest.ps1` |
-| `請在 assets/ 目錄下執行` | 目前不在 `assets` 資料夾 | 回第 3 步第 4 點 `cd` 進去 |
+| `請在 devops-lab/ 根目錄下執行` | 目前不在 `devops-lab` 資料夾 | 回第 3 步第 4 點 `cd` 進去 |
 | `[FAIL] Port 5000 被其他程式佔用`（macOS） | macOS 12 以後的 **AirPlay 接收器**佔 5000 | 系統設定 → 一般 → AirDrop 與接力 → 關掉「AirPlay 接收器」；或改用 5050：`LAB_PORT=5050 bash tools/selftest.sh env`，之後指令裡的 `-p 5000:5000` 都改成 `-p 5050:5000`、網址改 5050 |
 | `[FAIL] Port 5432 被其他程式佔用` | 電腦上本來就裝了 PostgreSQL | 暫停本機的 PostgreSQL 服務（Windows：服務 → postgresql → 停止） |
 | `[FAIL] Port ... 被其他程式佔用`，但是 Docker 容器佔的 | — | 腳本會排除 Docker 容器自己佔的 port；如果是上一輪課留下的容器，`docker ps` 看一下，`docker rm -f <名稱>` |
@@ -341,11 +338,11 @@ docker compose up -d mock-db mock-external-api
  ✔ mock-db Pulled
 [+] Running 3/3
  ✔ Network keypasco-devops-lab           Created
- ✔ Container assets-mock-db-1            Started
- ✔ Container assets-mock-external-api-1  Started
+ ✔ Container devops-lab-mock-db-1            Started
+ ✔ Container devops-lab-mock-external-api-1  Started
 ```
 
-容器名稱前面的 `assets-` 來自資料夾名稱（compose 用資料夾名當專案名），所以資料夾要保持叫 `assets`。
+容器名稱前面的 `devops-lab-` 是 `docker-compose.yml` 第一行 `name: devops-lab` 指定的專案名稱，Docker Desktop 也會把它們歸在 `devops-lab` 這一組；資料夾改名或用 ZIP 解壓成 `devops-lab-main` 都不影響。
 
 等 10–20 秒，確認狀態：
 
@@ -359,8 +356,8 @@ docker compose ps
 
 ```
 NAME                         IMAGE                COMMAND                  SERVICE             CREATED          STATUS                    PORTS
-assets-mock-db-1             postgres:16-alpine   "docker-entrypoint.s…"   mock-db             20 seconds ago   Up 20 seconds (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
-assets-mock-external-api-1   nginx:alpine         "/docker-entrypoint.…"   mock-external-api   20 seconds ago   Up 20 seconds             0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
+devops-lab-mock-db-1             postgres:16-alpine   "docker-entrypoint.s…"   mock-db             20 seconds ago   Up 20 seconds (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+devops-lab-mock-external-api-1   nginx:alpine         "/docker-entrypoint.…"   mock-external-api   20 seconds ago   Up 20 seconds             0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
 ```
 
 再確認假外部服務有回應：
@@ -398,7 +395,7 @@ OK
 | `mock-db` 是 `(health: starting)` | 第一次啟動在建資料庫 | 等 10–20 秒再 `docker compose ps` |
 | `Bind for 0.0.0.0:5432 failed: port is already allocated` | 5432 被佔（見第 5 步） | 停掉本機 PostgreSQL，或 `docker ps` 找出佔用的容器刪掉 |
 | PowerShell 印出一大串 `StatusCode`、`Content` 表格 | Windows PowerShell 的 `curl` 其實是 `Invoke-WebRequest` | 一定要打 **`curl.exe`**，或直接用瀏覽器開網址 |
-| `no configuration file provided: not found` | 不在 `assets` 資料夾 | `cd` 回 `assets` |
+| `no configuration file provided: not found` | 不在 `devops-lab` 資料夾 | `cd` 回 `devops-lab` |
 
 > **為什麼要 mock 服務？** 每個人在自己電腦上跑一份資料庫和外部服務，互不影響、不依賴教室網路。M4 會故意 `docker compose stop mock-db` 模擬「資料庫連不上」，在自己的電腦上搞壞也沒關係。
 
@@ -416,7 +413,7 @@ OK
 ### 7A. 自己 build
 
 ```bash
-docker build -t keypasco-lab-api lab-project
+docker build -t keypasco-lab-api apps/dotnet-deploylog
 ```
 
 （PowerShell 和 bash 一樣。）
@@ -436,7 +433,7 @@ docker build -t keypasco-lab-api lab-project
 
 `sha256:` 後面那串每台電腦不一樣。最後可能還有一行 `What's next: … docker scout quickview`，那是 Docker Desktop 的廣告，不用理它。
 
-這一步在做 `lab-project/Dockerfile` 寫的三件事：
+這一步在做 `apps/dotnet-deploylog/Dockerfile` 寫的三件事：
 
 ```mermaid
 flowchart LR
@@ -457,7 +454,7 @@ flowchart LR
 
 ### 7B. 從隨身碟 `docker load`
 
-1. 跟講師拿 `keypasco-lab-images-amd64.tar`（約 600 MB），**複製到 `assets` 資料夾**。
+1. 跟講師拿 `keypasco-lab-images-amd64.tar`（約 600 MB），**複製到 `devops-lab` 資料夾**。
 2. 載入：
 
    **PowerShell（Windows）**
@@ -542,7 +539,7 @@ WARN 數依你的電腦而定（例如 macOS 沒有 `pg_isready` 會是 `PASS 16
 ### 驗收清單
 
 - [ ] `docker version` 印得出 Server 版本
-- [ ] 終端機在 `assets` 資料夾裡
+- [ ] 終端機在 `devops-lab` 資料夾裡
 - [ ] `selftest env` 最後一行是 `FAIL 0`
 - [ ] `docker compose ps`：`mock-db` 是 `(healthy)`
 - [ ] `curl.exe`（或 `curl`）`http://localhost:8081/health` 回 `OK`

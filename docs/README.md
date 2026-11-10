@@ -7,7 +7,7 @@
 
 ## 怎麼用這份教程
 
-1. **先把環境跑起來**：已經裝好 Docker，照 [環境啟動快速版](00-quickstart.md) 貼指令就好；第一次安裝或想看完整說明，看 [00 環境準備](00-setup.md)。後面每一章都假設你已經在 `assets/` 資料夾裡、環境檢查全部 PASS。
+1. **先把環境跑起來**：已經裝好 Docker，照 [環境啟動快速版](00-quickstart.md) 貼指令就好；第一次安裝或想看完整說明，看 [00 環境準備](00-setup.md)。後面每一章都假設你已經在 `devops-lab/` 資料夾裡、環境檢查全部 PASS。
 2. **照順序做**：每一章會用到前一章的觀念（M2 的組態 → M3 的 pipeline 注入 → M4 的預檢 → M6 的 migrate），跳著做會看不懂為什麼。
 3. **指令都有兩種寫法**：Windows 用 **PowerShell**、macOS／Linux 用 **bash**，兩個版本並列，挑你的那一個。
 4. **每一章最後都有「程式設計：程式要怎麼寫才支援」**：開發者看這段知道要改什麼，完整說明在 [08](08-app-design-for-ops.md)。Java 背景的同學，做完 M6 再做 [09](09-java-spring-demo.md)，用 Spring Boot 把 M2／M4／M5／M6 實際跑一次。
@@ -59,7 +59,7 @@ flowchart LR
 - `migrate` 指令：升級資料庫 Schema（M6）
 - QA／POC 環境輸出 JSON 日誌、錯誤畫面有追蹤編號（M5）
 
-詳細說明在 `assets/lab-project/README.md`。
+詳細說明在 [apps/dotnet-deploylog/README.md](../apps/dotnet-deploylog/README.md)。
 
 ---
 

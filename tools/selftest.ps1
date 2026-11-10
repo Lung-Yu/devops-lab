@@ -1,10 +1,10 @@
 ﻿# 課程環境自我測試（PowerShell 版，Windows PowerShell 5.1 / PowerShell 7 都能跑；bash 用 selftest.sh）
-# 在 assets\ 目錄下執行：
+# 在 devops-lab\ 根目錄下執行：
 #   powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 env      # 只檢查環境——開課前請教室先跑
 #   powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 all      # 環境＋M2 三組切換＋M4 五種破壞＋/health＋M6 網站
-#   powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 m4 lab-m4-starter\start.ps1   # 抽查學員腳本
+#   powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 m4 labs\m4-preflight\starter\start.ps1   # 抽查學員腳本
 # 環境變數：LAB_PORT（預設 5000）
-param([string]$Mode = "all", [string]$Script = "solutions\start.ps1")
+param([string]$Mode = "all", [string]$Script = "labs\m4-preflight\solution\start.ps1")
 $ErrorActionPreference = 'Continue'
 $LabPort = if ($env:LAB_PORT) { [int]$env:LAB_PORT } else { 5000 }
 $script:Pass = 0; $script:Fail = 0; $script:Warn = 0
@@ -39,8 +39,8 @@ function Wait-Db {
     return $false
 }
 
-if (-not (Test-Path docker-compose.yml) -or -not (Test-Path lab-project)) {
-    [Console]::Error.WriteLine("請在 assets\ 目錄下執行（要看得到 docker-compose.yml 和 lab-project\）"); exit 2
+if (-not (Test-Path docker-compose.yml) -or -not (Test-Path apps\dotnet-deploylog)) {
+    [Console]::Error.WriteLine("請在 devops-lab\ 根目錄下執行（要看得到 docker-compose.yml 和 apps\dotnet-deploylog\）"); exit 2
 }
 
 function Check-Env {
@@ -75,7 +75,7 @@ function Start-Deps {
     docker image inspect keypasco-lab-api *> $null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  建置 keypasco-lab-api（第一次要下載 base image）..."
-        docker build -q -t keypasco-lab-api lab-project *> $null
+        docker build -q -t keypasco-lab-api apps/dotnet-deploylog *> $null
         if ($LASTEXITCODE -eq 0) { Ok "docker build 成功" } else { Ng "docker build 失敗"; return $false }
     } else { Ok "image keypasco-lab-api 已存在" }
     return $true

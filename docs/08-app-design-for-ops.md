@@ -8,12 +8,12 @@
 
 | 標示 | 意思 |
 |------|------|
-| **專案實際程式** `lab-project/…` | 從 `assets/lab-project/` 原封不動複製，附檔名與行號，可以打開對照 |
+| **專案實際程式** `apps/dotnet-deploylog/…` | 從 `apps/dotnet-deploylog/` 原封不動複製，附檔名與行號，可以打開對照 |
 | **範例／建議寫法** | 專案裡**沒有**，是建議你加的。每一段 C# 範例都套在專案副本上用 .NET 10 SDK 編譯過，標「實測」的另外實際跑過（見文末附錄） |
 | **Java 參考寫法** | Spring Boot／Maven 的對應做法，**未在本課程專案驗證**，用之前請在自己的專案上測 |
-| **✅ 已在 spring-demo 實跑** | Java 對照裡標這個的部分，在 `assets/spring-demo/`（Spring Boot 3.4）實際跑過，步驟見 [09](09-java-spring-demo.md) |
+| **✅ 已在 apps/java-spring-demo 實跑** | Java 對照裡標這個的部分，在 `apps/java-spring-demo/`（Spring Boot 3.4）實際跑過，步驟見 [09](09-java-spring-demo.md) |
 
-驗證指令都在 `assets/` 資料夾下執行，前提跟 M1 一樣：`mock-db` 在跑、`keypasco-lab-api` image 已經 build 好、網站開在 port 5000（Mac 被 AirPlay 佔用就改 5050）。PowerShell 一律打 `curl.exe`。
+驗證指令都在 `devops-lab/` 資料夾下執行，前提跟 M1 一樣：`mock-db` 在跑、`keypasco-lab-api` image 已經 build 好、網站開在 port 5000（Mac 被 AirPlay 佔用就改 5050）。PowerShell 一律打 `curl.exe`。
 
 ---
 
@@ -107,7 +107,7 @@ SDK、node、原始碼都留在前兩個階段，**最後的 image 只有執行�
 
 ### 0.5 機制 → 哪個模組教 → 程式在哪裡
 
-| 機制 | 哪個模組教 | 程式在哪裡（`lab-project/`） | 本文 |
+| 機制 | 哪個模組教 | 程式在哪裡（`apps/dotnet-deploylog/`） | 本文 |
 |------|-----------|---------------------------|------|
 | 設定分層、`/whoami` | [M2](02-m2-config.md) | `Program.cs` 第 18–23、98–105 行；`appsettings*.json` | 第 1 章 |
 | 必填設定檢查 | [M3](03-m3-ci-pipeline.md)（單元測試）、[M4](04-m4-deploy-scripts.md)（預檢 0） | `RequiredSettings.cs`（**目前啟動時沒有呼叫**） | 第 1 章 |
@@ -166,7 +166,7 @@ app.UseAuthorization();
 
 ### 專案實際程式
 
-`lab-project/Program.cs` 第 15–23 行：
+`apps/dotnet-deploylog/Program.cs` 第 15–23 行：
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -180,7 +180,7 @@ var connectionString =
     $"Username={config["DB_USER"]};Password={config["DB_PASSWORD"]};Timeout=3;Gss Encryption Mode=Disable";
 ```
 
-`lab-project/appsettings.json`（節錄設定值的部分）：
+`apps/dotnet-deploylog/appsettings.json`（節錄設定值的部分）：
 
 ```json
   "AllowedHosts": "*",
@@ -190,7 +190,7 @@ var connectionString =
   "DB_USER": "labuser"
 ```
 
-`lab-project/appsettings.QA.json` 全文：
+`apps/dotnet-deploylog/appsettings.QA.json` 全文：
 
 ```json
 {
@@ -198,7 +198,7 @@ var connectionString =
 }
 ```
 
-`lab-project/Program.cs` 第 100–105 行（回報「我吃到哪組設定」）：
+`apps/dotnet-deploylog/Program.cs` 第 100–105 行（回報「我吃到哪組設定」）：
 
 ```csharp
 app.MapGet("/whoami", () => new
@@ -225,7 +225,7 @@ app.MapGet("/whoami", () => new
 
 ### 建議補強 1：啟動時就檢查必填設定（範例）
 
-`lab-project/RequiredSettings.cs` 已經寫好了「列出缺少哪些必填設定」，M3 的 CI 單元測試也在測它：
+`apps/dotnet-deploylog/RequiredSettings.cs` 已經寫好了「列出缺少哪些必填設定」，M3 的 CI 單元測試也在測它：
 
 ```csharp
 // 啟動前要有的設定：少一個就列出來（跟 Lab M4 預檢 0 同一件事，這裡是程式裡的版本，給 CI 的單元測試測）
@@ -317,7 +317,7 @@ docker rm -f lab-api
 
 ### Java／Spring Boot 對照（參考寫法、未在本課程專案驗證）
 
-> ✅ **已在 `assets/spring-demo/` 實跑**（[09 步驟 2、4](09-java-spring-demo.md#步驟-2用-poc-環境的設定啟動m2)）：`application.yml` 用 `${DB_HOST}` 讀環境變數、`SPRING_PROFILES_ACTIVE` 切 profile、`@ConfigurationProperties`＋`@Validated`＋`@NotBlank` 缺值時 exit 1。
+> ✅ **已在 `apps/java-spring-demo/` 實跑**（[09 步驟 2、4](09-java-spring-demo.md#步驟-2用-poc-環境的設定啟動m2)）：`application.yml` 用 `${DB_HOST}` 讀環境變數、`SPRING_PROFILES_ACTIVE` 切 profile、`@ConfigurationProperties`＋`@Validated`＋`@NotBlank` 缺值時 exit 1。
 >
 > ⚠️ 實跑抓到的坑：yml 寫 `${X}`（沒有冒號）而變數沒設時，Spring 會把字面字串 `${X}` 當成值，`@NotBlank` 擋不下來；必填設定要寫 `${X:}`（[09 步驟 8](09-java-spring-demo.md#步驟-8選做少一個冒號預檢就失效m4)）。
 
@@ -363,7 +363,7 @@ war 部署到外部 Tomcat 時，環境變數設在 Tomcat 的 `bin/setenv.sh`�
 
 ### 專案實際程式
 
-`lab-project/Program.cs` 第 35–39 行（註冊）：
+`apps/dotnet-deploylog/Program.cs` 第 35–39 行（註冊）：
 
 ```csharp
 // Lab M4 步驟四：註冊 Health Check，檢查資料庫連不連得上
@@ -373,7 +373,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<SchemaHealthCheck>("schema", tags: ["ready"]);
 ```
 
-`lab-project/Program.cs` 第 107–110 行（對應網址）：
+`apps/dotnet-deploylog/Program.cs` 第 107–110 行（對應網址）：
 
 ```csharp
 // DB 正常回 200 Healthy；DB 斷線回 503 Unhealthy
@@ -382,7 +382,7 @@ app.MapHealthChecks("/health", new() { Predicate = c => c.Name == "database" });
 app.MapHealthChecks("/health/ready", new() { Predicate = c => c.Tags.Contains("ready") });
 ```
 
-`lab-project/Infrastructure/SchemaHealthCheck.cs`：
+`apps/dotnet-deploylog/Infrastructure/SchemaHealthCheck.cs`：
 
 ```csharp
 // 「DB 連得上」不等於「DB 的 Schema 跟程式碼對得上」（部署死因 3）：
@@ -458,7 +458,7 @@ docker logs lab-api 2>&1 | Select-String "Health check schema"
 
 ### Java／Spring Boot 對照（參考寫法、未在本課程專案驗證）
 
-> ✅ **已在 `assets/spring-demo/` 實跑**（[09 步驟 3](09-java-spring-demo.md#步驟-3健康檢查分兩種m4)）：`probes.enabled`＋readiness 群組 `readinessState,db`，DB 停掉時 liveness 200、readiness 503。下面的 `SchemaHealthIndicator` 仍是參考寫法。
+> ✅ **已在 `apps/java-spring-demo/` 實跑**（[09 步驟 3](09-java-spring-demo.md#步驟-3健康檢查分兩種m4)）：`probes.enabled`＋readiness 群組 `readinessState,db`，DB 停掉時 liveness 200、readiness 503。下面的 `SchemaHealthIndicator` 仍是參考寫法。
 
 | .NET | Spring Boot（`spring-boot-starter-actuator`） |
 |------|-------------|
@@ -508,7 +508,7 @@ Schema 要跟著程式版本走，但**不能在服務啟動時自動改**：多
 
 ### 專案實際程式
 
-`lab-project/Program.cs` 第 77–81 行：
+`apps/dotnet-deploylog/Program.cs` 第 77–81 行：
 
 ```csharp
 var app = builder.Build();
@@ -518,7 +518,7 @@ if (args.FirstOrDefault() == "migrate")
     return await DbSetup.MigrateAsync(app.Services, config);
 ```
 
-`lab-project/Data/DbSetup.cs` 第 12–42 行：
+`apps/dotnet-deploylog/Data/DbSetup.cs` 第 12–42 行：
 
 ```csharp
 public static async Task<int> MigrateAsync(IServiceProvider services, IConfiguration config)
@@ -554,7 +554,7 @@ public static async Task<int> MigrateAsync(IServiceProvider services, IConfigura
 }
 ```
 
-`lab-project/Data/MigrationState.cs` 第 10–19 行：
+`apps/dotnet-deploylog/Data/MigrationState.cs` 第 10–19 行：
 
 ```csharp
 public static async Task<(List<string> Applied, List<string> Pending)> GetAsync(AppDbContext db, CancellationToken ct = default)
@@ -616,7 +616,7 @@ docker run --rm --env-file .env.poc --add-host=host.docker.internal:host-gateway
 
 ### Java／Spring Boot 對照（參考寫法、未在本課程專案驗證）
 
-> ✅ **已在 `assets/spring-demo/` 實跑**（[09 步驟 6、7](09-java-spring-demo.md#步驟-6改了已經套用的-migration-會怎樣m6)）：Spring Boot 啟動時自動 migrate、改舊檔被 checksum 擋、`SPRING_FLYWAY_ENABLED=false` 關掉後用 Flyway CLI image 單獨 migrate。Flyway 10 起 PostgreSQL 要另外加 `flyway-database-postgresql`。下面 `main` 加 `migrate` 參數的寫法仍是參考寫法。
+> ✅ **已在 `apps/java-spring-demo/` 實跑**（[09 步驟 6、7](09-java-spring-demo.md#步驟-6改了已經套用的-migration-會怎樣m6)）：Spring Boot 啟動時自動 migrate、改舊檔被 checksum 擋、`SPRING_FLYWAY_ENABLED=false` 關掉後用 Flyway CLI image 單獨 migrate。Flyway 10 起 PostgreSQL 要另外加 `flyway-database-postgresql`。下面 `main` 加 `migrate` 參數的寫法仍是參考寫法。
 
 > ⚠️ **Spring Boot 只要 classpath 上有 Flyway，預設就會在啟動時自動 migrate**——正好是 M6 要避免的做法。要明確關掉，改成獨立步驟。
 
@@ -665,7 +665,7 @@ POC 現場出事，維運只拿得到 `docker logs` 和使用者的一張截圖�
 
 ### 專案實際程式：格式與等級（全在設定檔）
 
-`lab-project/appsettings.json` 第 2–17 行：
+`apps/dotnet-deploylog/appsettings.json` 第 2–17 行：
 
 ```json
   "Logging": {
@@ -686,7 +686,7 @@ POC 現場出事，維運只拿得到 `docker logs` 和使用者的一張截圖�
   },
 ```
 
-`lab-project/appsettings.Development.json` 全文：
+`apps/dotnet-deploylog/appsettings.Development.json` 全文：
 
 ```json
 {
@@ -701,7 +701,7 @@ POC 現場出事，維運只拿得到 `docker logs` 和使用者的一張截圖�
 }
 ```
 
-`lab-project/appsettings.POC.json` 的 `"Logging": { "LogLevel": { "Default": "Warning" } }`：POC 只留 Warning 以上。
+`apps/dotnet-deploylog/appsettings.POC.json` 的 `"Logging": { "LogLevel": { "Default": "Warning" } }`：POC 只留 Warning 以上。
 
 | 設定 | 說明 |
 |------|------|
@@ -715,7 +715,7 @@ POC 現場出事，維運只拿得到 `docker logs` 和使用者的一張截圖�
 
 ### 專案實際程式：Program.cs 裡跟 log 有關的三段
 
-`lab-project/Program.cs` 第 25–31 行：
+`apps/dotnet-deploylog/Program.cs` 第 25–31 行：
 
 ```csharp
 // JSON log 裡的中文直接輸出，不轉成 \uXXXX（docker logs 才看得懂）
@@ -730,7 +730,7 @@ builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogL
 - 第一段：預設的 JSON 輸出會把中文跳脫成 `資料…`，`grep 資料庫` 搜不到。`UnsafeRelaxedJsonEscaping` 的 Unsafe 指的是「放進 HTML 不安全」，log 不會被當 HTML 顯示，所以可以用。
 - 第二段：**會誤導人的 log 比沒有更糟**。維運看到 Error 就會去查，查半天發現是正常流程——之後真的 Error 也沒人信了。這裡用程式把特定 Category 調到只剩 Critical。
 
-`lab-project/Program.cs` 第 72–75 行（錯誤回應格式）：
+`apps/dotnet-deploylog/Program.cs` 第 72–75 行（錯誤回應格式）：
 
 ```csharp
 // 錯誤回應統一格式（RFC 9457 Problem Details），帶 traceId 讓使用者回報、維運查 log（Module 5）
@@ -745,7 +745,7 @@ builder.Services.AddExceptionHandler<DbExceptionHandler>();
 
 ### 專案實際程式：把資料庫錯誤翻成人話
 
-`lab-project/Infrastructure/DbExceptionHandler.cs` 第 8–33 行：
+`apps/dotnet-deploylog/Infrastructure/DbExceptionHandler.cs` 第 8–33 行：
 
 ```csharp
 public class DbExceptionHandler(IProblemDetailsService problems, ILogger<DbExceptionHandler> log) : IExceptionHandler
@@ -788,7 +788,7 @@ public class DbExceptionHandler(IProblemDetailsService problems, ILogger<DbExcep
 
 ### 具名欄位：專案裡的寫法
 
-`lab-project/Endpoints/AuthEndpoints.cs` 第 28 行、第 44 行：
+`apps/dotnet-deploylog/Endpoints/AuthEndpoints.cs` 第 28 行、第 44 行：
 
 ```csharp
 log.LogWarning("登入失敗 {UserName}", req.UserName);
@@ -799,7 +799,7 @@ log.LogInformation("登入成功 {UserName} {Role}", user.UserName, user.Role);
 
 ### 專案實際程式：X-Trace-Id 標頭，以及一個已知的坑
 
-`lab-project/Program.cs` 第 86–91 行：
+`apps/dotnet-deploylog/Program.cs` 第 86–91 行：
 
 ```csharp
 // 每個回應都帶 X-Trace-Id：畫面上的錯誤訊息、瀏覽器開發者工具、伺服器 log 用同一個編號對得起來
@@ -810,7 +810,7 @@ app.Use(async (ctx, next) =>
 });
 ```
 
-前端 `lab-project/frontend/src/api.js` 第 32–35 行把兩個來源合在一起：
+前端 `apps/dotnet-deploylog/frontend/src/api.js` 第 32–35 行把兩個來源合在一起：
 
 ```js
   if (!res.ok) {
@@ -873,7 +873,7 @@ app.Use(async (ctx, next) =>
 
 ### Java／Spring Boot 對照（參考寫法、未在本課程專案驗證）
 
-> ✅ **已在 `assets/spring-demo/` 實跑**（[09 步驟 5](09-java-spring-demo.md#步驟-5換-profile-就換-log-格式m2m5)）：`logging.structured.format.console: ecs`＋`log.atError().addKeyValue(...)`，`orderId` 是 JSON 第一層欄位。`@RestControllerAdvice` 那段仍是參考寫法。
+> ✅ **已在 `apps/java-spring-demo/` 實跑**（[09 步驟 5](09-java-spring-demo.md#步驟-5換-profile-就換-log-格式m2m5)）：`logging.structured.format.console: ecs`＋`log.atError().addKeyValue(...)`，`orderId` 是 JSON 第一層欄位。`@RestControllerAdvice` 那段仍是參考寫法。
 
 | .NET | Java |
 |------|------|
@@ -917,7 +917,7 @@ class DbErrorAdvice {
 
 ### 專案實際程式：誰收得到 SIGTERM
 
-`lab-project/Dockerfile` 第 26 行：
+`apps/dotnet-deploylog/Dockerfile` 第 26 行：
 
 ```dockerfile
 ENTRYPOINT ["dotnet", "MyApi.dll"]
@@ -948,7 +948,7 @@ app.Lifetime.ApplicationStopping.Register(() =>
 
 ### 專案實際程式：登入狀態放在哪
 
-`lab-project/Program.cs` 第 42–65 行（節錄）：
+`apps/dotnet-deploylog/Program.cs` 第 42–65 行（節錄）：
 
 ```csharp
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -1079,7 +1079,7 @@ Dockerfile 一樣要用 exec 形式：`ENTRYPOINT ["java", "-jar", "app.jar"]`�
 
 ### 專案實際程式
 
-`lab-project/Dockerfile` 全文：
+`apps/dotnet-deploylog/Dockerfile` 全文：
 
 ```dockerfile
 # 第一階段：建置前端（Vue3）——依 package-lock.json 安裝，版本跟大家一樣
@@ -1110,7 +1110,7 @@ EXPOSE 5000
 ENTRYPOINT ["dotnet", "MyApi.dll"]
 ```
 
-`lab-project/MyApi.csproj` 第 7–10 行：
+`apps/dotnet-deploylog/MyApi.csproj` 第 7–10 行：
 
 ```xml
     <!-- 產生 packages.lock.json 鎖住套件版本（要 commit 進版控） -->
@@ -1119,7 +1119,7 @@ ENTRYPOINT ["dotnet", "MyApi.dll"]
     <DefaultItemExcludes>$(DefaultItemExcludes);frontend/**</DefaultItemExcludes>
 ```
 
-`lab-project/.dockerignore` 全文：
+`apps/dotnet-deploylog/.dockerignore` 全文：
 
 ```
 bin/
@@ -1129,7 +1129,7 @@ frontend/dist/
 wwwroot/
 ```
 
-`lab-project/Program.cs` 第 112–116 行：
+`apps/dotnet-deploylog/Program.cs` 第 112–116 行：
 
 ```csharp
 // 畫面頁首的環境色條與版本號用：不登入也看得到，但只給環境名稱和版本
@@ -1161,13 +1161,13 @@ app.MapGet("/api/system", () => new { environment = app.Environment.EnvironmentN
 
 ### 坑：畫面上的版本號永遠是 1.0.0
 
-- 課程的 CI 範例（`gitlab-ci-dotnet-example.yml`）和示範 GitLab 的 pipeline 都**沒有傳版本號**（沒有 `--build-arg APP_VERSION`，`dotnet build` 也沒有 `-p:InformationalVersion`），版本就是預設的 `1.0.0`。
+- 課程的 CI 範例（`labs/m3-ci-pipeline/gitlab-ci-dotnet-example.yml`）和示範 GitLab 的 pipeline 都**沒有傳版本號**（沒有 `--build-arg APP_VERSION`，`dotnet build` 也沒有 `-p:InformationalVersion`），版本就是預設的 `1.0.0`。
 - 在 git repo 裡建置時，.NET SDK 會自動在版本後面接上 `+<完整 commit SHA>`（實測：`1.0.0+aa6420a1…`）。而 `Split('+')[0]` 剛好把這段 SHA 切掉了。
 
 結果是**每一版的頁首都顯示 `v1.0.0`**，這個版本號對追版本沒有幫助。建議 CI 建置時把 commit SHA 傳進去（**建議寫法**）：
 
 ```yaml
-# lab-project 這種「Dockerfile 裡編譯」的寫法：用 build-arg 傳進去
+# apps/dotnet-deploylog 這種「Dockerfile 裡編譯」的寫法：用 build-arg 傳進去
 - docker build --build-arg APP_VERSION="$CI_COMMIT_SHORT_SHA" -t "$IMAGE_TAG" .
 ```
 
@@ -1189,7 +1189,7 @@ curl http://localhost:5000/api/system
 現在你應該看到 `"version":"1.0.0"`。用 build-arg 另外建一個 image 再看一次（第一次約 1–3 分鐘）：
 
 ```bash
-docker build --build-arg APP_VERSION=0c18a755 -t keypasco-lab-api:0c18a755 lab-project
+docker build --build-arg APP_VERSION=0c18a755 -t keypasco-lab-api:0c18a755 apps/dotnet-deploylog
 docker run --rm -d --name lab-ver -p 5001:5000 --env-file .env.qa keypasco-lab-api:0c18a755
 curl http://localhost:5001/api/system
 docker rm -f lab-ver
@@ -1249,14 +1249,14 @@ docker rm -f lab-ver
 
 ### 專案實際程式
 
-- `lab-project/appsettings.json` **沒有** `DB_PASSWORD`（第 1 章）；程式裡只有 `config["DB_PASSWORD"]`。
+- `apps/dotnet-deploylog/appsettings.json` **沒有** `DB_PASSWORD`（第 1 章）；程式裡只有 `config["DB_PASSWORD"]`。
 - 登入失敗只記帳號、不記密碼（第 4 章）；`migrate` 失敗的 log 只印主機、port、資料庫名稱，不印連線字串：
 
   ```csharp
   log.LogCritical(ex, "Migration 失敗，資料庫 {Host}:{Port}/{Database}", config["DB_HOST"], config["DB_PORT"], config["DB_NAME"]);
   ```
 
-- 使用者 API 回傳時刻意不帶密碼雜湊（`lab-project/Endpoints/UserEndpoints.cs` 第 18–22 行）：
+- 使用者 API 回傳時刻意不帶密碼雜湊（`apps/dotnet-deploylog/Endpoints/UserEndpoints.cs` 第 18–22 行）：
 
   ```csharp
   // 回傳時不帶 PasswordHash：雜湊值也不該離開後端
@@ -1266,7 +1266,7 @@ docker rm -f lab-ver
           .ToListAsync());
   ```
 
-- 課堂用的初始帳號密碼（`lab-project/Data/DbSetup.cs` 第 50 行）：
+- 課堂用的初始帳號密碼（`apps/dotnet-deploylog/Data/DbSetup.cs` 第 50 行）：
 
   ```csharp
   var password = config["SEED_PASSWORD"] ?? "Lab@2026";
@@ -1368,7 +1368,7 @@ spring.flyway.password=${MIGRATION_DB_PASSWORD}
 
 ### 專案實際程式
 
-`lab-project/Program.cs` 第 50–51、67–70 行：
+`apps/dotnet-deploylog/Program.cs` 第 50–51、67–70 行：
 
 ```csharp
         o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
@@ -1382,7 +1382,7 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("AdminOnly", p => p.RequireRole(Roles.Admin));
 ```
 
-`lab-project/Endpoints/DeploymentEndpoints.cs` 第 14–15、25–38 行：
+`apps/dotnet-deploylog/Endpoints/DeploymentEndpoints.cs` 第 14–15、25–38 行：
 
 ```csharp
         // 預設：登入就能看；改資料要 CanEdit，刪除要 AdminOnly——權限在後端擋，前端藏按鈕只是方便
@@ -1408,7 +1408,7 @@ builder.Services.AddAuthorizationBuilder()
 
 刪除端點（第 53–61 行）結尾是 `.RequireAuthorization("AdminOnly")`。
 
-`lab-project/Infrastructure/Audit.cs`：
+`apps/dotnet-deploylog/Infrastructure/Audit.cs`：
 
 ```csharp
 public static class Audit
@@ -1549,7 +1549,7 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 ## 附錄：本章範例程式怎麼驗證的
 
-C# 範例全部套在 `lab-project` 的一份副本上（課程專案本身沒有改），用 `mcr.microsoft.com/dotnet/sdk:10.0` 執行 `dotnet build`：0 個警告、0 個錯誤。標「實測」的另外在隔離的容器裡實際跑過：
+C# 範例全部套在 `apps/dotnet-deploylog` 的一份副本上（課程專案本身沒有改），用 `mcr.microsoft.com/dotnet/sdk:10.0` 執行 `dotnet build`：0 個警告、0 個錯誤。標「實測」的另外在隔離的容器裡實際跑過：
 
 | 範例 | 實際觀察到的結果 |
 |------|----------------|

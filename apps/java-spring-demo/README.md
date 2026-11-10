@@ -1,6 +1,6 @@
 # Spring Boot 對照範例（Java 組加碼）
 
-課堂 Lab 用的是 .NET 的 DeployLog（`../lab-project/`）。這個資料夾把 **M2 組態、M4 預檢與健康檢查、M5 結構化日誌、M6 Schema 版本管理** 用 Java Spring Boot 再做一次，讓 Java 背景的同學對照：概念一樣，只是寫法不同。
+課堂 Lab 用的是 .NET 的 DeployLog（`../apps/dotnet-deploylog/`）。這個資料夾把 **M2 組態、M4 預檢與健康檢查、M5 結構化日誌、M6 Schema 版本管理** 用 Java Spring Boot 再做一次，讓 Java 背景的同學對照：概念一樣，只是寫法不同。
 
 - Spring Boot 3.4.1、Java 17、Flyway 10、PostgreSQL 16
 - 跟 DeployLog 共用同一套環境：同一個 `mock-db`、同一份 `.env.dev`／`.env.qa`／`.env.poc`
@@ -21,7 +21,7 @@
 | 呼叫網址 | 用 **`curl.exe`**（Windows PowerShell 的 `curl` 是另一個指令，輸出不一樣） | 用 `curl` |
 | 目前資料夾 | `${PWD}` | `$PWD` |
 | 在輸出裡找字 | `Select-String "關鍵字"` | `grep "關鍵字"` |
-| 路徑 | `spring-demo\src\...`（`/` 也可以） | `spring-demo/src/...` |
+| 路徑 | `apps\java-spring-demo\src\...`（`/` 也可以） | `apps/java-spring-demo/src/...` |
 
 不想看指令輸出也行：所有 `curl` 的網址都可以直接貼到瀏覽器打開。
 
@@ -31,16 +31,16 @@
 
 ## 1. 準備環境
 
-開 PowerShell／終端機，切到 repo 的 `assets/` 資料夾（之後所有指令都在這裡下）：
+開 PowerShell／終端機，切到 repo 的 `devops-lab/` 資料夾（之後所有指令都在這裡下）：
 
 ```powershell
 # Windows：路徑換成你實際 clone 或解壓的位置
-cd C:\Users\你的帳號\devops-lab\assets
+cd C:\Users\你的帳號\devops-lab
 ```
 
 ```bash
 # macOS
-cd ~/devops-lab/assets
+cd ~/devops-lab
 ```
 
 確認 Docker 有在跑（Docker Desktop 的鯨魚圖示是穩定狀態），然後啟動資料庫和假的外部服務：
@@ -57,7 +57,7 @@ docker compose ps
 
 ```bash
 # Windows、macOS 都一樣（第一次約 2–5 分鐘，要下載 Maven、JDK 和套件）
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 ```
 
 最後出現 `naming to docker.io/library/deploylog-spring` 或 `Successfully tagged deploylog-spring` 就是成功。
@@ -233,18 +233,18 @@ Migrating schema "spring_demo" to version "2 - add order status"
 
 > 為什麼是 `spring_demo` schema：DeployLog 的表也在同一個資料庫，分開放才不會互相干擾。
 
-**現在故意改已經套用過的 V2**：用編輯器打開 `spring-demo/src/main/resources/db/migration/V2__add_order_status.sql`，把 `'NEW'` 改成 `'PENDING'`，存檔。重新建 image 再啟動：
+**現在故意改已經套用過的 V2**：用編輯器打開 `apps/java-spring-demo/src/main/resources/db/migration/V2__add_order_status.sql`，把 `'NEW'` 改成 `'PENDING'`，存檔。重新建 image 再啟動：
 
 ```powershell
 # Windows
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 docker run --rm --env-file .env.poc -e SPRING_PROFILES_ACTIVE=poc `
   --add-host=host.docker.internal:host-gateway -e DB_HOST=host.docker.internal deploylog-spring
 ```
 
 ```bash
 # macOS
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 docker run --rm --env-file .env.poc -e SPRING_PROFILES_ACTIVE=poc \
   --add-host=host.docker.internal:host-gateway -e DB_HOST=host.docker.internal deploylog-spring
 ```
@@ -263,8 +263,8 @@ Flyway 記得每個版本檔當初的指紋，檔案被改過就拒絕啟動。*
 
 ```bash
 # Windows、macOS 都一樣（用 git clone 的才有這個指令；ZIP 下載的請手動把 'PENDING' 改回 'NEW'）
-git checkout -- spring-demo/src/main/resources/db/migration/V2__add_order_status.sql
-docker build -t deploylog-spring spring-demo
+git checkout -- apps/java-spring-demo/src/main/resources/db/migration/V2__add_order_status.sql
+docker build -t deploylog-spring apps/java-spring-demo
 ```
 
 ## 實驗 E：正式環境把 migrate 拆出來（M6）
@@ -296,7 +296,7 @@ docker run -d --name spring-api -p 8080:8080 \
 ```powershell
 # Windows
 docker run --rm --add-host=host.docker.internal:host-gateway `
-  -v "${PWD}/spring-demo/src/main/resources/db/migration:/flyway/sql" `
+  -v "${PWD}/apps/java-spring-demo/src/main/resources/db/migration:/flyway/sql" `
   flyway/flyway:10 `
   -url=jdbc:postgresql://host.docker.internal:5432/labdb_qa `
   -user=labuser -password=labpass -schemas=spring_demo migrate
@@ -321,7 +321,7 @@ Successfully applied 2 migrations to schema "spring_demo", now at version v2
 
 ## 實驗 F（選做）：少一個冒號的陷阱（M4）
 
-打開 `spring-demo/src/main/resources/application.yml`，最後一行：
+打開 `apps/java-spring-demo/src/main/resources/application.yml`，最後一行：
 
 ```yaml
   external-api-url: ${EXTERNAL_API_URL:}
@@ -331,7 +331,7 @@ Successfully applied 2 migrations to schema "spring_demo", now at version v2
 
 結果：**服務照常啟動**。變數沒設時，Spring 會把字面字串 `${EXTERNAL_API_URL}` 當成值，它不是空的，所以 `@NotBlank` 擋不下來。`docker logs` 裡 `externalApiUrl` 的值會是 `${EXTERNAL_API_URL}`。
 
-這跟 M4 的 `start-naive.sh` 是同一種問題：**看起來啟動了，其實設定是錯的**。做完記得把冒號加回去（或 `git checkout -- spring-demo/src/main/resources/application.yml`）再重建。
+這跟 M4 的 `start-naive.sh` 是同一種問題：**看起來啟動了，其實設定是錯的**。做完記得把冒號加回去（或 `git checkout -- apps/java-spring-demo/src/main/resources/application.yml`）再重建。
 
 ---
 
@@ -355,7 +355,7 @@ docker compose stop
 | `Connection to host.docker.internal:5432 refused` | mock-db 沒開或還沒 healthy：`docker compose ps` 確認 |
 | Windows：`curl` 跑出一大堆 `StatusCode`、`Content` | 打成 `curl` 了，要打 `curl.exe` |
 | Windows：換行的指令跑一半就出錯 | 反引號後面多了空白，或複製時反引號變成別的符號。也可以把整段接成一行再貼 |
-| Windows：`-v` 那行說找不到路徑 | 確認是在 PowerShell 而不是 Git Bash／cmd，而且目前位置是 `assets/` |
+| Windows：`-v` 那行說找不到路徑 | 確認是在 PowerShell 而不是 Git Bash／cmd，而且目前位置是 `devops-lab/` |
 | 實驗 D 之後每次啟動都 checksum mismatch | V2 沒改回來，或改回來了但沒重建 image |
 | Linux 使用者 | 指令同 macOS；`--add-host=host.docker.internal:host-gateway` 已經處理了 Linux 沒有這個名字的問題 |
 
@@ -367,7 +367,7 @@ docker compose stop
 
 ```powershell
 # Windows（PowerShell）：環境變數用 $env:名稱 設定，只在這個視窗有效
-cd spring-demo
+cd apps/java-spring-demo
 mvn -DskipTests package
 $env:DB_HOST="localhost"; $env:DB_PORT="5432"; $env:DB_NAME="labdb"
 $env:DB_USER="labuser"; $env:DB_PASSWORD="labpass"
@@ -377,7 +377,7 @@ java -jar target\deploylog-spring-1.0.0.jar
 
 ```bash
 # macOS：變數寫在指令前面，只對這一次執行有效
-cd spring-demo
+cd apps/java-spring-demo
 mvn -DskipTests package
 DB_HOST=localhost DB_PORT=5432 DB_NAME=labdb DB_USER=labuser DB_PASSWORD=labpass \
 EXTERNAL_API_URL=http://localhost:8081 SPRING_PROFILES_ACTIVE=dev \
@@ -393,7 +393,7 @@ Mac 注意：zsh 不會把沒加引號的變數拆開，`E="A=1 B=2"; env $E jav
 | 檔案 | 內容 | DeployLog（.NET）對應 |
 |------|------|---------------------|
 | `pom.xml` | 套件清單；版本由 Spring Boot parent 統一管理 | `MyApi.csproj`＋`packages.lock.json` |
-| `Dockerfile` | 兩階段：Maven 編譯 → 只放 JRE 執行 | `lab-project/Dockerfile` |
+| `Dockerfile` | 兩階段：Maven 編譯 → 只放 JRE 執行 | `apps/dotnet-deploylog/Dockerfile` |
 | `src/main/resources/application.yml` | 共用設定；`${DB_HOST}` 從環境變數讀 | `appsettings.json` |
 | `application-dev.yml`／`-qa.yml`／`-poc.yml` | 各環境覆寫 | `appsettings.Development.json`／`.QA.json`／`.POC.json` |
 | `src/main/java/demo/App.java` | 必填設定檢查（`@NotBlank`）、結構化日誌示範 | `RequiredSettings.cs`、`Program.cs` |

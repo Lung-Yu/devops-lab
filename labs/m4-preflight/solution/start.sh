@@ -1,6 +1,6 @@
 #!/bin/bash
 # 預檢啟動腳本（參考解答）：預檢全部通過，才啟動服務
-# 用法（在 assets/ 目錄下）：bash solutions/start.sh .env.poc
+# 用法（在 devops-lab/ 根目錄下）：bash labs/m4-preflight/solution/start.sh .env.poc
 set -euo pipefail   # 任一指令失敗就停、用到未定義變數就停
 
 ENV_FILE="${1:-.env.poc}"

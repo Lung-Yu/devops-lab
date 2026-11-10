@@ -10,7 +10,7 @@
 | 觀念 | 一句話 | 範例網站對應 |
 |------|-------|------------|
 | 手動改 Schema 的三個風險 | 漏改、順序錯、無法回溯 | — |
-| Migration as code | Schema 變更寫成有序的檔案、進版控，DB 裡有版本表 | `lab-project/Migrations/`、`__EFMigrationsHistory` |
+| Migration as code | Schema 變更寫成有序的檔案、進版控，DB 裡有版本表 | `apps/dotnet-deploylog/Migrations/`、`__EFMigrationsHistory` |
 | migrate 是獨立的一步 | 部署流程裡先跑 migrate，不在服務啟動時偷偷做 | `docker run … keypasco-lab-api migrate` |
 | Readiness 檢查 Schema 版本 | `/health` 看活著沒，`/health/ready` 看能不能接客 | `Infrastructure/SchemaHealthCheck.cs` |
 | 進 CI：migration 失敗就不部署 | deploy job 先 migrate 再換容器 | `ci-demo` 的 deploy job，見 [03b](03b-gitlab-environments-release.md) |
@@ -111,7 +111,7 @@ dotnet ef migrations script --idempotent --output artifacts/migrations.sql
 
 | 程式碼這邊（進版控） | 資料庫這邊（版本表） |
 |-------------------|------------------|
-| `lab-project/Migrations/`<br/>`20261027161121_InitialCreate.cs`　v1：兩張表<br/>`20261027161130_AddAuditLogs.cs`　v2：加稽核<br/>`AppDbContextModelSnapshot.cs`　目前全貌 | `SELECT * FROM "__EFMigrationsHistory";`<br/>`20261027161121_InitialCreate │ 10.0.14`<br/>`20261027161130_AddAuditLogs  │ 10.0.14` |
+| `apps/dotnet-deploylog/Migrations/`<br/>`20261027161121_InitialCreate.cs`　v1：兩張表<br/>`20261027161130_AddAuditLogs.cs`　v2：加稽核<br/>`AppDbContextModelSnapshot.cs`　目前全貌 | `SELECT * FROM "__EFMigrationsHistory";`<br/>`20261027161121_InitialCreate │ 10.0.14`<br/>`20261027161130_AddAuditLogs  │ 10.0.14` |
 
 **兩邊一對，就知道差幾版。** 範例網站的程式碼裡就有這個比對（`Data/MigrationState.cs`）：「程式碼裡有的 Migration」減掉「資料庫已套用的」＝待套用清單。
 
@@ -175,8 +175,8 @@ flyway ... info      # 看目前套用到哪一版
 
 ## Lab：讓 Schema 跟程式碼對齊
 
-> 兩人一組：維運背景負責下指令、看 exit code、查版本表；開發背景對照 `lab-project/Migrations/` 解說每一步，說明 `Up()` 和 `Down()` 各做什麼。
-> 以下指令都在 `assets/` 目錄下執行。Mac 的 5000 被 AirPlay 佔用時，`-p 5000:5000` 改 `-p 5050:5000`、網址改 5050。
+> 兩人一組：維運背景負責下指令、看 exit code、查版本表；開發背景對照 `apps/dotnet-deploylog/Migrations/` 解說每一步，說明 `Up()` 和 `Down()` 各做什麼。
+> 以下指令都在 `devops-lab/` 根目錄下執行。Mac 的 5000 被 AirPlay 佔用時，`-p 5000:5000` 改 `-p 5050:5000`、網址改 5050。
 
 ```mermaid
 flowchart LR
@@ -192,7 +192,7 @@ docker image ls keypasco-lab-api
 
 **你應該看到**：`mock-db` 是 `Up … (healthy)`；`keypasco-lab-api` 有一行。
 
-**如果不是這樣**：mock-db 沒在跑 → `docker compose up -d mock-db`；沒有 image → `docker build -t keypasco-lab-api lab-project`（或 `docker load -i keypasco-lab-images-amd64.tar`）；上一個 Lab 的 `lab-api` 還在 → `docker rm -f lab-api`。
+**如果不是這樣**：mock-db 沒在跑 → `docker compose up -d mock-db`；沒有 image → `docker build -t keypasco-lab-api apps/dotnet-deploylog`（或 `docker load -i keypasco-lab-images-amd64.tar`）；上一個 Lab 的 `lab-api` 還在 → `docker rm -f lab-api`。
 
 為了少打字，先把「連回這台電腦的 DB」那兩個參數存成變數：
 
@@ -273,7 +273,7 @@ curl.exe -i http://localhost:5000/health/ready
 
 ### 步驟 2：看程式碼裡的 Schema 版本（開發背景帶）
 
-打開 `lab-project/Migrations/`：
+打開 `apps/dotnet-deploylog/Migrations/`：
 
 ```text
 20261027161121_InitialCreate.cs     ← 第 1 版：Users、Deployments 兩張表
@@ -519,14 +519,14 @@ flowchart LR
 
 ## 程式設計：程式要怎麼寫才支援
 
-`migrate` 不是另一個工具，是同一個程式的另一個進入點。`lab-project/Program.cs` 第 79–81 行在 `builder.Build()` 之後、開始聽 port 之前分岔，回傳值就是 exit code：
+`migrate` 不是另一個工具，是同一個程式的另一個進入點。`apps/dotnet-deploylog/Program.cs` 第 79–81 行在 `builder.Build()` 之後、開始聽 port 之前分岔，回傳值就是 exit code：
 
 ```csharp
 if (args.FirstOrDefault() == "migrate")
     return await DbSetup.MigrateAsync(app.Services, config);
 ```
 
-`lab-project/Data/DbSetup.cs` 第 21–26 行先拒絕「貼心地」建新庫：
+`apps/dotnet-deploylog/Data/DbSetup.cs` 第 21–26 行先拒絕「貼心地」建新庫：
 
 ```csharp
 if (!await db.GetService<IRelationalDatabaseCreator>().ExistsAsync())

@@ -11,11 +11,11 @@
 |------|---------------|-------------|
 | 設定寫死在程式碼的代價 | 第 2、3 節的反面教材 | M1：不可變交付物（[01-m1-operability.md](01-m1-operability.md)） |
 | 為什麼各環境要盡量一樣（Dev/Prod Parity） | 第 4 節 | M3：CI（[03-m3-ci-pipeline.md](03-m3-ci-pipeline.md)） |
-| ASP.NET Core 設定分層：後面蓋前面 | `lab-project/appsettings*.json`、`Program.cs` | M5：log 等級也走這套（[05-m5-logging.md](05-m5-logging.md)） |
+| ASP.NET Core 設定分層：後面蓋前面 | `apps/dotnet-deploylog/appsettings*.json`、`Program.cs` | M5：log 等級也走這套（[05-m5-logging.md](05-m5-logging.md)） |
 | 機密放環境變數、不進版控 | `.env.dev`／`.env.qa`／`.env.poc` | M3：GitLab 變數注入；[03b](03b-gitlab-environments-release.md)：Environment scope |
 | 同一顆 image 切三個環境 | Lab：`/whoami`、網站頁首色條 | M4：預檢讀的是同一組 `DB_*`（[04-m4-deploy-scripts.md](04-m4-deploy-scripts.md)） |
 
-**前置**：已照 [00-setup.md](00-setup.md) 裝好 Docker、解壓 `keypasco-devops-lab.zip`。以下所有指令都在解壓出來的 `assets/` 資料夾裡執行。
+**前置**：已照 [00-setup.md](00-setup.md) 裝好 Docker、解壓 `keypasco-devops-lab.zip`。以下所有指令都在解壓出來的 `devops-lab/` 資料夾裡執行。
 
 > **關於指令**：`docker`、`docker compose` 在 PowerShell（Windows）和 bash（macOS／Linux）寫法一樣，只給一份。寫法不同的地方（`curl`、複製檔案、開編輯器）兩種都會列出來。
 
@@ -133,7 +133,7 @@ flowchart TB
 
 ### 5.1 `appsettings.json`：共用的非機密預設值（進版控）
 
-`lab-project/appsettings.json`（節錄，log 格式的細節 M5 再講）：
+`apps/dotnet-deploylog/appsettings.json`（節錄，log 格式的細節 M5 再講）：
 
 ```json
 {
@@ -164,7 +164,7 @@ flowchart TB
 | `appsettings.QA.json` | `DB_NAME` = `labdb_qa` | `ASPNETCORE_ENVIRONMENT=QA` |
 | `appsettings.POC.json` | `DB_NAME` = `labdb_poc`、log 只留 `Warning` | `ASPNETCORE_ENVIRONMENT=POC` |
 
-`lab-project/appsettings.POC.json` 全文：
+`apps/dotnet-deploylog/appsettings.POC.json` 全文：
 
 ```json
 {
@@ -231,7 +231,7 @@ var connectionString =
 
 ### 5.5 `.env` 檔長什麼樣
 
-Lab 用的 `assets/.env.qa`：
+Lab 用的 `.env.qa`：
 
 ```
 # Module 2 Lab — QA 環境設定
@@ -319,7 +319,7 @@ environment = app.Environment.EnvironmentName   // 來自 ASPNETCORE_ENVIRONMENT
 
 ### L1. 走讀：設定在範例專案的哪裡
 
-打開 `assets/lab-project/`，只看跟設定有關的兩個地方：
+打開 `apps/dotnet-deploylog/`，只看跟設定有關的兩個地方：
 
 1. **`appsettings*.json` 四個檔**：對照第 5.1、5.2 節，找出哪個檔有 `DB_NAME`、哪個檔改了 log 等級
 2. **`Program.cs` 開頭**：找到組 `connectionString` 那幾行（第 5.4 節），再往下找 `/whoami`：
@@ -339,14 +339,14 @@ environment = app.Environment.EnvironmentName   // 來自 ASPNETCORE_ENVIRONMENT
 
 ### L2. 啟動練習資料庫
 
-在 `assets` 資料夾裡（還沒進去就先 `cd` 到 `assets`，見 [00 第 3 步](00-setup.md)）：
+在 `devops-lab` 資料夾裡（還沒進去就先 `cd` 到 `devops-lab`，見 [00 第 3 步](00-setup.md)）：
 
 ```bash
 docker compose up -d mock-db mock-external-api
 docker compose ps
 ```
 
-**你應該看到**：`docker compose ps` 列出 `assets-mock-db-1` 和 `assets-mock-external-api-1`，STATUS 是 `Up …`（`mock-db` 會顯示 `(healthy)`）。已經在跑的話，`up -d` 只會印兩行 `Container assets-mock-… Running`，也是對的。
+**你應該看到**：`docker compose ps` 列出 `devops-lab-mock-db-1` 和 `devops-lab-mock-external-api-1`，STATUS 是 `Up …`（`mock-db` 會顯示 `(healthy)`）。已經在跑的話，`up -d` 只會印兩行 `Container devops-lab-mock-… Running`，也是對的。
 
 > 已經照 [00-setup.md](00-setup.md) 啟動過、也 build 過 image，L2、L3 都可以跳過。
 > `/whoami` 不連資料庫，所以這一步主要是為了 L6（看網站）和後面的 M4。
@@ -354,7 +354,7 @@ docker compose ps
 ### L3. 建置 image（只建這一次）
 
 ```bash
-docker build -t keypasco-lab-api lab-project
+docker build -t keypasco-lab-api apps/dotnet-deploylog
 ```
 
 **你應該看到**：最後幾行出現 `naming to docker.io/library/keypasco-lab-api`，沒有 `ERROR`。
@@ -408,7 +408,7 @@ docker rm -f lab-api
 | `docker run` 報 `port is already allocated`，或 curl 回 403 | 5000 被別的程式佔走（Mac 12 以上的 AirPlay 接收器就會佔 5000） | 把 `-p 5000:5000` 改成 `-p 5050:5000`，curl 改打 `http://localhost:5050/whoami`（之後每一步都照這樣改） |
 | `Conflict. The container name "/lab-api" is already in use` | 上一步的容器沒刪 | `docker rm -f lab-api` 再跑一次 |
 | `unable to find image 'keypasco-lab-api'`／要去 Docker Hub 拉 | L3 沒 build 成功 | 回 L3 |
-| `open .env.dev: no such file or directory`（或 `The system cannot find the file specified`） | 不在 `assets/` 資料夾裡 | 先 `cd` 到 `assets/` |
+| `open .env.dev: no such file or directory`（或 `The system cannot find the file specified`） | 不在 `devops-lab/` 資料夾裡 | 先 `cd` 到 `devops-lab/` |
 
 ### L5. 不改程式碼、不重新 build，換成 QA、再換成 POC
 
@@ -661,7 +661,7 @@ if (RequiredSettings.Missing(config) is { Length: > 0 } missing)
 
 ## 9. 自我檢核
 
-做完 Lab，對照下面三種輸出（在 `assets/` 下）：
+做完 Lab，對照下面三種輸出（在 `devops-lab/` 下）：
 
 ```
 docker run --env-file .env.dev ...  → {"environment":"Development","dbHost":"localhost","dbName":"labdb"}

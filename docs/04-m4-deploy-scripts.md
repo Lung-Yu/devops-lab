@@ -19,7 +19,7 @@
 | `/health` 與 `/health/ready` | 活著 ≠ 能接客 | Part 2 第 8–9 節 |
 | 檢核點 2：互相破壞 | 五種破壞都被擋下、exit 1 | Part 2 第 10–11 節 |
 
-**本文的指令都在 `assets/` 目錄下執行**（就是你解壓 `keypasco-devops-lab.zip` 得到的資料夾）。凡是 Shell 和 PowerShell 寫法不同的地方都兩種都給：
+**本文的指令都在 `devops-lab/` 根目錄下執行**（就是你解壓 `keypasco-devops-lab.zip` 得到的資料夾）。凡是 Shell 和 PowerShell 寫法不同的地方都兩種都給：
 
 - **Windows**：PowerShell
 - **macOS／Linux**：bash
@@ -295,13 +295,13 @@ exit code：0
 
 ## 8. 反面教材：什麼都不檢查的啟動腳本
 
-打開 `lab-m4-starter/start-naive.sh`（Windows 版 `start-naive.ps1`，`docker run` 那一行一模一樣）：
+打開 `labs/m4-preflight/starter/start-naive.sh`（Windows 版 `start-naive.ps1`，`docker run` 那一行一模一樣）：
 
 ```bash
 #!/bin/bash
 # 反面教材：直接啟動，什麼都不檢查
 # （image 裡實際執行的就是 dotnet MyApi.dll）
-# 用法（在 assets/ 目錄下）：bash lab-m4-starter/start-naive.sh
+# 用法（在 devops-lab/ 根目錄下）：bash labs/m4-preflight/starter/start-naive.sh
 docker run --rm -p 5000:5000 --env-file .env.poc keypasco-lab-api
 ```
 
@@ -322,13 +322,13 @@ docker run --rm -p 5000:5000 --env-file .env.poc keypasco-lab-api
 
 ## 0. 先把環境跑起來
 
-1. **啟動 mock 依賴服務**（模擬 POC 環境的 DB 和一支外部服務）。先確認終端機在 `assets` 資料夾裡（不在的話先 `cd` 過去，見 [00 第 3 步](00-setup.md)），PowerShell 和 bash 指令相同：
+1. **啟動 mock 依賴服務**（模擬 POC 環境的 DB 和一支外部服務）。先確認終端機在 `devops-lab` 資料夾裡（不在的話先 `cd` 過去，見 [00 第 3 步](00-setup.md)），PowerShell 和 bash 指令相同：
 
    ```bash
    docker compose up -d mock-db mock-external-api
    ```
 
-   已經在跑的話只會印 `Container assets-mock-… Running`，也是對的。
+   已經在跑的話只會印 `Container devops-lab-mock-… Running`，也是對的。
 
 2. **確認有起來**：
 
@@ -351,7 +351,7 @@ docker run --rm -p 5000:5000 --env-file .env.poc keypasco-lab-api
    **如果不是這樣**（教室電腦有還原卡、image 不見了）：重 build 一次：
 
    ```bash
-   docker build -t keypasco-lab-api lab-project
+   docker build -t keypasco-lab-api apps/dotnet-deploylog
    ```
 
 4. **確認 `.env.poc` 在**，內含 `APP_PORT`、`EXTERNAL_API_URL`、`DB_HOST`、`DB_PORT`：
@@ -392,10 +392,10 @@ flowchart LR
 
    | 環境 | 指令 |
    |------|------|
-   | Windows | `powershell -ExecutionPolicy Bypass -File lab-m4-starter\start-naive.ps1` |
-   | macOS／Linux | `bash lab-m4-starter/start-naive.sh` |
+   | Windows | `powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start-naive.ps1` |
+   | macOS／Linux | `bash labs/m4-preflight/starter/start-naive.sh` |
 
-3. **另開一個終端機**（一樣 `cd assets`），看四件事：
+3. **另開一個終端機**（一樣 `cd devops-lab`），看四件事：
 
    ```bash
    docker compose ps -a mock-db
@@ -418,7 +418,7 @@ flowchart LR
    ```
    $ docker compose ps -a mock-db
    NAME               IMAGE                …   STATUS                     PORTS
-   assets-mock-db-1   postgres:16-alpine   …   Exited (0) 5 seconds ago
+   devops-lab-mock-db-1   postgres:16-alpine   …   Exited (0) 5 seconds ago
    $ docker ps --filter ancestor=keypasco-lab-api
    CONTAINER ID   IMAGE              COMMAND              CREATED         STATUS         PORTS                    NAMES
    ff530ff14e38   keypasco-lab-api   "dotnet MyApi.dll"   5 seconds ago   Up 5 seconds   0.0.0.0:5000->5000/tcp   condescending_dijkstra
@@ -578,10 +578,10 @@ Lab 的參考解答比這個多三樣：每項多一行「→ 去哪修」、印
 
 ## 4. Lab 準備：起始檔與分工
 
-| 你的環境 | 起始檔 | 執行方式（在 `assets/` 下） |
+| 你的環境 | 起始檔 | 執行方式（在 `devops-lab/` 下） |
 |---------|-------|---------------------------|
-| Windows（PowerShell） | `lab-m4-starter\start.ps1` | `powershell -ExecutionPolicy Bypass -File lab-m4-starter\start.ps1 .env.poc` |
-| Linux／macOS（bash） | `lab-m4-starter/start.sh` | `bash lab-m4-starter/start.sh .env.poc` |
+| Windows（PowerShell） | `labs\m4-preflight\starter\start.ps1` | `powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start.ps1 .env.poc` |
+| Linux／macOS（bash） | `labs/m4-preflight/starter/start.sh` | `bash labs/m4-preflight/starter/start.sh .env.poc` |
 
 > bash 版需要 `curl`、`lsof`、`pg_isready`。Windows 的 Git Bash 沒有 `lsof`、`pg_isready`，**Windows 請做 PowerShell 版**。
 
@@ -737,8 +737,8 @@ exec docker run --rm --name lab-api -p "$APP_PORT:5000" --env-file "$ENV_FILE" \
 
 | 環境 | 指令 |
 |------|------|
-| Windows | `powershell -ExecutionPolicy Bypass -File lab-m4-starter\start.ps1 .env.poc` |
-| macOS／Linux | `bash lab-m4-starter/start.sh .env.poc` |
+| Windows | `powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start.ps1 .env.poc` |
+| macOS／Linux | `bash labs/m4-preflight/starter/start.sh .env.poc` |
 
 你應該看到（bash 版）：
 
@@ -769,7 +769,7 @@ PowerShell 版只差在 [0/3] 那兩行：
 ✅ 資料庫連線正常
 所有預檢通過，啟動服務...
 ```
-<!-- 未驗證：PowerShell 尚未在 Windows 實測（內容依 solutions/start.ps1 的 Write-Host 字串） -->
+<!-- 未驗證：PowerShell 尚未在 Windows 實測（內容依 labs/m4-preflight/solution/start.ps1 的 Write-Host 字串） -->
 
 服務會在前景執行（後面接著是 .NET 的啟動 log），按 `Ctrl+C` 停止。**先不要停**，另開一個終端機做第 8 節。
 
@@ -797,9 +797,9 @@ PowerShell 版只差在 [0/3] 那兩行：
 bash 版：
 
 ```
-$ bash lab-m4-starter/start.sh .env.broken
+$ bash labs/m4-preflight/starter/start.sh .env.broken
 [0/3] 檢查必填設定與工具
-lab-m4-starter/start.sh: line 12: DB_HOST: 缺少 DB_HOST，請檢查 .env.broken
+labs/m4-preflight/starter/start.sh: line 12: DB_HOST: 缺少 DB_HOST，請檢查 .env.broken
 $ echo $?
 1
 ```
@@ -808,10 +808,10 @@ $ echo $?
 
 開頭的 `腳本路徑: line N: DB_HOST:` 是 bash 自己加的，後面才是你寫的訊息。
 
-PowerShell 版（擷取時跑的是參考解答，你的指令是 `powershell -ExecutionPolicy Bypass -File lab-m4-starter\start.ps1 .env.broken`）：
+PowerShell 版（擷取時跑的是參考解答，你的指令是 `powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start.ps1 .env.broken`）：
 
 ```
-PS> .\solutions\start.ps1 .env.broken
+PS> .\labs\m4-preflight\solution\start.ps1 .env.broken
 [0/3] 檢查必填設定
 ❌ 缺少環境變數 DB_HOST，請檢查 .env.broken
 PS> $LASTEXITCODE
@@ -827,7 +827,7 @@ PS> $LASTEXITCODE
 ### 預檢 2：Port 被佔用
 
 ```
-$ bash lab-m4-starter/start.sh .env.poc
+$ bash labs/m4-preflight/starter/start.sh .env.poc
 [0/3] 檢查必填設定與工具
 ✅ 設定與工具齊全
 [1/3] 檢查外部服務：http://localhost:8081
@@ -844,7 +844,7 @@ $ echo $?
 ### 預檢 3：資料庫連不上
 
 ```
-$ bash lab-m4-starter/start.sh .env.poc
+$ bash labs/m4-preflight/starter/start.sh .env.poc
 [0/3] 檢查必填設定與工具
 ✅ 設定與工具齊全
 [1/3] 檢查外部服務：http://localhost:8081
@@ -892,9 +892,9 @@ $ echo $?
 
 ### 8.1 套件已經加好
 
-`lab-project/MyApi.csproj` 已經引用社群套件 `AspNetCore.HealthChecks.NpgSql`（AspNetCore.Diagnostics.HealthChecks 專案，不是微軟維護的），不用自己 `dotnet add package`。
+`apps/dotnet-deploylog/MyApi.csproj` 已經引用社群套件 `AspNetCore.HealthChecks.NpgSql`（AspNetCore.Diagnostics.HealthChecks 專案，不是微軟維護的），不用自己 `dotnet add package`。
 
-### 8.2 看 `lab-project/Program.cs` 註冊 Health Checks 的地方
+### 8.2 看 `apps/dotnet-deploylog/Program.cs` 註冊 Health Checks 的地方
 
 ```csharp
 builder.Services.AddHealthChecks()
@@ -915,7 +915,7 @@ app.MapHealthChecks("/health/ready", new() { Predicate = c => c.Tags.Contains("r
 
 ### 8.3 測試：DB 斷線時 `/health` 回 503
 
-服務用第 5.5 步跑著，**另開一個終端機**（`cd assets`）：
+服務用第 5.5 步跑著，**另開一個終端機**（`cd devops-lab`）：
 
 1. 打一次 `/health`：
 
@@ -945,7 +945,7 @@ app.MapHealthChecks("/health/ready", new() { Predicate = c => c.Tags.Contains("r
    Healthy
    $ docker compose stop mock-db
    [+] Stopping 1/1
-    ✔ Container assets-mock-db-1  Stopped
+    ✔ Container devops-lab-mock-db-1  Stopped
    $ curl -i http://localhost:5000/health
    HTTP/1.1 503 Service Unavailable
    …
@@ -1041,8 +1041,8 @@ bash：
 ```bash
 grep -v '^DB_HOST=' .env.poc > .env.broken                              # #0：拿掉 DB_HOST
 sed 's/^DB_HOST=.*/DB_HOST=localhsot/' .env.poc > .env.typo              # #3：DB_HOST 打錯
-bash lab-m4-starter/start.sh .env.broken; echo $?
-bash lab-m4-starter/start.sh .env.typo; echo $?
+bash labs/m4-preflight/starter/start.sh .env.broken; echo $?
+bash labs/m4-preflight/starter/start.sh .env.typo; echo $?
 ```
 
 PowerShell：
@@ -1050,8 +1050,8 @@ PowerShell：
 ```powershell
 Get-Content .env.poc | Where-Object { $_ -notmatch '^DB_HOST=' } | Set-Content .env.broken -Encoding ASCII
 (Get-Content .env.poc) -replace '^DB_HOST=.*', 'DB_HOST=localhsot' | Set-Content .env.typo -Encoding ASCII
-powershell -ExecutionPolicy Bypass -File lab-m4-starter\start.ps1 .env.broken; $LASTEXITCODE
-powershell -ExecutionPolicy Bypass -File lab-m4-starter\start.ps1 .env.typo; $LASTEXITCODE
+powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start.ps1 .env.broken; $LASTEXITCODE
+powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start.ps1 .env.typo; $LASTEXITCODE
 ```
 <!-- 未驗證：PowerShell 尚未在 Windows 實測（bash 版五種破壞已實測，輸出與第 6 節相同） -->
 
@@ -1076,12 +1076,12 @@ docker compose start mock-db mock-external-api
 
 | 環境 | 指令 |
 |------|------|
-| Windows | `powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 m4 lab-m4-starter\start.ps1` |
-| macOS／Linux | `bash tools/selftest.sh m4 lab-m4-starter/start.sh` |
+| Windows | `powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 m4 labs\m4-preflight\starter\start.ps1` |
+| macOS／Linux | `bash tools/selftest.sh m4 labs/m4-preflight/starter/start.sh` |
 
-> Mac：`LAB_PORT=5050 bash tools/selftest.sh m4 lab-m4-starter/start.sh`
+> Mac：`LAB_PORT=5050 bash tools/selftest.sh m4 labs/m4-preflight/starter/start.sh`
 
-你應該看到（bash 版；PowerShell 版腳本路徑是 `lab-m4-starter\start.ps1`，其他相同）：
+你應該看到（bash 版；PowerShell 版腳本路徑是 `labs\m4-preflight\starter\start.ps1`，其他相同）：
 
 ```
 
@@ -1090,7 +1090,7 @@ docker compose start mock-db mock-external-api
   [PASS] mock-external-api /health 200
   [PASS] image keypasco-lab-api 已存在
 
-== 3. Lab M4：預檢腳本 lab-m4-starter/start.sh ==
+== 3. Lab M4：預檢腳本 labs/m4-preflight/starter/start.sh ==
   [PASS] #0 缺 DB_HOST → exit 1，訊息含「DB_HOST」
   [PASS] #1 外部服務停掉 → exit 1，訊息含「外部服務」
   [PASS] #2 Port 5000 被佔用 → exit 1，訊息含「佔用」
@@ -1143,7 +1143,7 @@ echo "$APP 60 秒內沒有 ready"; docker logs --tail 30 "$APP"; exit 1
 
 ## 程式設計：程式要怎麼寫才支援
 
-第 8.2 節看過註冊方式；「能不能接客」要檢查什麼，是程式自己決定的。`lab-project/Infrastructure/SchemaHealthCheck.cs` 實作一個方法就是一項檢查：
+第 8.2 節看過註冊方式；「能不能接客」要檢查什麼，是程式自己決定的。`apps/dotnet-deploylog/Infrastructure/SchemaHealthCheck.cs` 實作一個方法就是一項檢查：
 
 ```csharp
 public class SchemaHealthCheck(AppDbContext db) : IHealthCheck
@@ -1195,14 +1195,14 @@ public class SchemaHealthCheck(AppDbContext db) : IHealthCheck
 
 ## 附：參考解答
 
-先自己寫，卡住再看。檔案也在 `assets/solutions/start.sh`、`assets/solutions/start.ps1`。
+先自己寫，卡住再看。檔案也在 `labs/m4-preflight/solution/start.sh`、`labs/m4-preflight/solution/start.ps1`。
 
-<details><summary>參考解答（bash：solutions/start.sh）</summary>
+<details><summary>參考解答（bash：labs/m4-preflight/solution/start.sh）</summary>
 
 ```bash
 #!/bin/bash
 # 預檢啟動腳本（參考解答）：預檢全部通過，才啟動服務
-# 用法（在 assets/ 目錄下）：bash solutions/start.sh .env.poc
+# 用法（在 devops-lab/ 根目錄下）：bash labs/m4-preflight/solution/start.sh .env.poc
 set -euo pipefail   # 任一指令失敗就停、用到未定義變數就停
 
 ENV_FILE="${1:-.env.poc}"
@@ -1253,11 +1253,11 @@ exec docker run --rm --name lab-api -p "$APP_PORT:5000" --env-file "$ENV_FILE" \
 
 </details>
 
-<details><summary>參考解答（PowerShell：solutions/start.ps1）</summary>
+<details><summary>參考解答（PowerShell：labs/m4-preflight/solution/start.ps1）</summary>
 
 ```powershell
 # 預檢啟動腳本（參考解答）：預檢全部通過，才啟動服務
-# 用法（在 assets\ 目錄下）：powershell -ExecutionPolicy Bypass -File solutions\start.ps1 .env.poc
+# 用法（在 devops-lab\ 根目錄下）：powershell -ExecutionPolicy Bypass -File labs\m4-preflight\solution\start.ps1 .env.poc
 param([string]$EnvFile = ".env.poc")
 $ErrorActionPreference = 'Stop'   # 任一指令失敗就停
 
@@ -1321,4 +1321,4 @@ exit $LASTEXITCODE
 
 ---
 
-終端機截圖（`images/m4-*.png`）在講師 Mac 上擷取：port 是 5080、跑的是 `solutions/` 版；教室電腦會是 5000、你跑的是 `lab-m4-starter/` 版。
+終端機截圖（`images/m4-*.png`）在講師 Mac 上擷取：port 是 5080、跑的是 `labs/m4-preflight/solution/` 版；教室電腦會是 5000、你跑的是 `labs/m4-preflight/starter/` 版。
