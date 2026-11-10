@@ -1,4 +1,4 @@
-# .gitlab-ci.yml — .NET 10 build & publish pipeline（課程示範專案；內容同 assets/gitlab-ci-dotnet-example.yml）
+# .gitlab-ci.yml — .NET 10 build & publish pipeline（課程示範專案；跟 labs/m3-ci-pipeline/gitlab-ci-dotnet-example.yml 同一套，另加 secrets-demo、deploy、release）
 # 對應 Module 3：自動化打包與持續整合
 # 教學重點：不管誰的機器、哪個 CI runner 執行，編出來的產物都要一樣（Dependency 鎖版本）
 # 前提：
