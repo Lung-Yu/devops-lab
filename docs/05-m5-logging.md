@@ -328,7 +328,7 @@ _logger.LogError(ex, "Order {OrderId} processing failed for user {UserId}",
 ## 實作：從錯誤畫面找到那一行 log
 
 > 情境：QA 環境的網站登入就出錯。使用者截圖給你，上面有一串追蹤編號。你要在伺服器 log 裡找到那一行，說出原因。
-> 以下指令都在 `assets/` 目錄下執行。Mac 的 5000 被 AirPlay 佔用時，把 `-p 5000:5000` 改成 `-p 5050:5000`、網址改 5050。
+> 以下指令都在 `devops-lab/` 根目錄下執行。Mac 的 5000 被 AirPlay 佔用時，把 `-p 5000:5000` 改成 `-p 5050:5000`、網址改 5050。
 
 ### 範例網站的 log 是怎麼設定的
 
@@ -355,7 +355,7 @@ docker image ls keypasco-lab-api
 
 **如果不是這樣**：
 - mock-db 一直不是 healthy → 第一次啟動在建資料庫，等 10–20 秒再看一次
-- 沒有 image → `docker build -t keypasco-lab-api lab-project`（或用隨堂 USB 的 `docker load -i keypasco-lab-images-amd64.tar`）
+- 沒有 image → `docker build -t keypasco-lab-api apps/dotnet-deploylog`（或用隨堂 USB 的 `docker load -i keypasco-lab-images-amd64.tar`）
 - 上一個 Lab 的容器還在 → `docker rm -f lab-api`
 
 為了少打字，先把「讓容器連回這台電腦的 DB」那兩個參數存成變數（跟 M6 Lab 一樣）：
@@ -678,7 +678,7 @@ flowchart TD
 
 ## 程式設計：程式要怎麼寫才支援
 
-JSON 格式、等級、`TraceId` 自動帶進每一行，全在 `appsettings*.json` 設定（`IncludeScopes: true`），程式碼不用改。程式要做的是**用具名欄位寫 log**、**錯誤回應帶 `traceId`**、**稽核紀錄也存追蹤編號**（`lab-project/Infrastructure/Audit.cs`）：
+JSON 格式、等級、`TraceId` 自動帶進每一行，全在 `appsettings*.json` 設定（`IncludeScopes: true`），程式碼不用改。程式要做的是**用具名欄位寫 log**、**錯誤回應帶 `traceId`**、**稽核紀錄也存追蹤編號**（`apps/dotnet-deploylog/Infrastructure/Audit.cs`）：
 
 ```csharp
 TraceId = Activity.Current?.TraceId.ToString(),

@@ -14,16 +14,29 @@ docker compose version
 
 兩行都印出版本號就對了。
 
-## 2. 取得檔案，進到 `assets`
+## 2. 取得檔案，進到 `devops-lab`
+
+> **Day 1 已經跑過環境的人，先做這兩步**（第一次跑、或電腦被還原過的人跳過）：
+>
+> 1. 收掉 Day 1 的舊容器。在哪個資料夾執行都可以，看到 `No such container` 不用理它：
+>
+>    ```bash
+>    docker rm -f lab-api spring-api assets-mock-db-1 assets-mock-external-api-1
+>    ```
+>
+> 2. Day 1 的 `devops-lab` 資料夾（或解壓的 zip 資料夾）改名或刪掉，再照下面重新 clone。資料夾結構改過了，舊的不要 `git pull`，也不用再 `cd assets`。
+>
+> Day 1 的練習資料庫會清掉，第 6 步重新 migrate 即可。Day 1 build 好的 image 還在，第 5 步通常可以跳過。
+
 
 ```bash
 git clone https://github.com/Lung-Yu/devops-lab.git
-cd devops-lab/assets
+cd devops-lab
 ```
 
-沒有 git：到 <https://github.com/Lung-Yu/devops-lab> 按 **Code → Download ZIP**，解壓後進 `devops-lab-main/assets`。
+沒有 git：到 <https://github.com/Lung-Yu/devops-lab> 按 **Code → Download ZIP**，解壓後進 `devops-lab-main`。
 
-已經 clone 過：在 `assets` 裡跑 `git pull` 更新。之後所有指令都在 `assets` 下執行，資料夾名稱不要改。
+已經 clone 過：在 `devops-lab` 裡跑 `git pull` 更新。之後所有指令都在 `devops-lab` 這一層（看得到 `docker-compose.yml` 的地方）執行。
 
 ## 3. 環境檢查
 
@@ -62,9 +75,9 @@ docker image ls keypasco-lab-api
 
 ```bash
 # A. 自己 build（網路順、Mac 用這條；第一次約 1–3 分鐘以上）
-docker build -t keypasco-lab-api lab-project
+docker build -t keypasco-lab-api apps/dotnet-deploylog
 
-# B. 教室網路慢：跟講師拿 keypasco-lab-images-amd64.tar，放進 assets 後載入
+# B. 教室網路慢：跟講師拿 keypasco-lab-images-amd64.tar，放進 devops-lab 後載入
 docker load -i keypasco-lab-images-amd64.tar
 ```
 
@@ -108,7 +121,7 @@ Healthy
 第一次要下載 Maven、JDK 和套件，約 2–5 分鐘，需要連得到 Docker Hub 和 Maven Central。教室網路塞住就先跟著投影片，課後再做。
 
 ```bash
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 ```
 
 **PowerShell（Windows）**
@@ -135,9 +148,9 @@ curl http://localhost:8080/actuator/health
 |--------|------|
 | `docker` 找不到、`error during connect` | 打開 Docker Desktop，等 Engine running；重開一個終端機 |
 | `running scripts is disabled` | 照第 3 步的完整指令，不要直接打 `.\tools\selftest.ps1` |
-| `請在 assets/ 目錄下執行`、`no configuration file provided` | `cd` 回 `assets` |
+| `請在 devops-lab/ 根目錄下執行`、`no configuration file provided` | `cd` 回 `devops-lab` |
 | PowerShell 印出一大串 `StatusCode` | 改打 `curl.exe` |
-| `port is already allocated`（5432） | 暫停電腦上原本的 PostgreSQL |
+| `port is already allocated`（5432 或 8081） | 多半是 Day 1 的舊容器還在：執行第 2 步開頭的 `docker rm -f ...`；還是不行，暫停電腦上原本的 PostgreSQL |
 | Port 5000 被佔用（Mac 的 AirPlay） | 改成 `-p 5050:5000`，網址的 5000 改 5050 |
 | Port 8080 被佔用 | 改成 `-p 8090:8080`，網址的 8080 改 8090 |
 | `container name ... is already in use` | `docker rm -f lab-api`（Java 組是 `spring-api`），再執行一次 |

@@ -1,5 +1,5 @@
 ﻿# 預檢啟動腳本（學員起始檔）：把四個 TODO 補完，任一項失敗就 exit 1
-# 用法（在 assets\ 目錄下）：powershell -ExecutionPolicy Bypass -File lab-m4-starter\start.ps1 .env.poc
+# 用法（在 devops-lab\ 根目錄下）：powershell -ExecutionPolicy Bypass -File labs\m4-preflight\starter\start.ps1 .env.poc
 param([string]$EnvFile = ".env.poc")
 $ErrorActionPreference = 'Stop'   # 任一指令失敗就停
 

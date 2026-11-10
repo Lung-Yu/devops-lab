@@ -1,14 +1,14 @@
 #!/bin/bash
 # 課程環境自我測試（bash 版；Windows 用 selftest.ps1）
-# 在 assets/ 目錄下執行：
+# 在 devops-lab/ 根目錄下執行：
 #   bash tools/selftest.sh env                       # 只檢查環境（Docker、compose、對外連線、Port、磁碟）——開課前請教室先跑
 #   bash tools/selftest.sh all                       # 環境＋M2 三組切換＋M4 五種破壞＋/health＋M6 網站（migrate、登入、權限）（講師課前驗收）
-#   bash tools/selftest.sh m4 lab-m4-starter/start.sh  # 只對指定的預檢腳本跑五種破壞（檢核點 2 抽查學員腳本）
+#   bash tools/selftest.sh m4 labs/m4-preflight/starter/start.sh  # 只對指定的預檢腳本跑五種破壞（檢核點 2 抽查學員腳本）
 # 環境變數：LAB_PORT（預設 5000；Mac 的 5000 被 AirPlay 佔用時設 5050）
 set -uo pipefail
 
 MODE="${1:-all}"
-SCRIPT="${2:-solutions/start.sh}"
+SCRIPT="${2:-labs/m4-preflight/solution/start.sh}"
 LAB_PORT="${LAB_PORT:-5000}"
 PASS=0; FAIL=0; WARN=0
 TMP="$(mktemp -d)"
@@ -19,8 +19,8 @@ ng()   { echo "  [FAIL] $*"; FAIL=$((FAIL + 1)); }
 warn() { echo "  [WARN] $*"; WARN=$((WARN + 1)); }
 section() { echo; echo "== $* =="; }
 
-if [ ! -f docker-compose.yml ] || [ ! -d lab-project ]; then
-  echo "請在 assets/ 目錄下執行（要看得到 docker-compose.yml 和 lab-project/）" >&2; exit 2
+if [ ! -f docker-compose.yml ] || [ ! -d apps/dotnet-deploylog ]; then
+  echo "請在 devops-lab/ 根目錄下執行（要看得到 docker-compose.yml 和 apps/dotnet-deploylog/）" >&2; exit 2
 fi
 
 check_env() {
@@ -61,7 +61,7 @@ start_deps() {
   if curl -sf --max-time 3 http://localhost:8081/health > /dev/null; then ok "mock-external-api /health 200"; else ng "mock-external-api 沒有回應"; fi
   if ! docker image inspect keypasco-lab-api > /dev/null 2>&1; then
     echo "  建置 keypasco-lab-api（第一次要下載 base image）..."
-    if docker build -q -t keypasco-lab-api lab-project > /dev/null; then ok "docker build 成功"; else ng "docker build 失敗"; return 1; fi
+    if docker build -q -t keypasco-lab-api apps/dotnet-deploylog > /dev/null; then ok "docker build 成功"; else ng "docker build 失敗"; return 1; fi
   else ok "image keypasco-lab-api 已存在"; fi
 }
 

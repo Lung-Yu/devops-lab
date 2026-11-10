@@ -1,4 +1,4 @@
-# 共用設定：變數名稱跟 assets/.env.* 一樣（DB_HOST、DB_NAME…），同一份 .env 給 .NET 和 Spring 用
+# 共用設定：變數名稱跟 .env.* 一樣（DB_HOST、DB_NAME…），同一份 .env 給 .NET 和 Spring 用
 # 各環境差異放 application-<profile>.yml，用 SPRING_PROFILES_ACTIVE 切換（對應 .NET 的 ASPNETCORE_ENVIRONMENT）
 spring:
   datasource:

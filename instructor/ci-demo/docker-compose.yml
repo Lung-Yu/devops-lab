@@ -1,0 +1,57 @@
+# 課程截圖用的本機 GitLab＋Runner（只在講師電腦上跑，截完圖就 docker compose down -v）
+# 用法見 README.md。帳號密碼只給這個拋棄式示範環境用。
+# 固定專案名稱：沿用既有的 ci-demo_gitlab-* volume，資料夾搬家也不會變成一台空的 GitLab
+name: ci-demo
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:19.4.3-ce.0
+    hostname: gitlab
+    environment:
+      GITLAB_ROOT_PASSWORD: "Keypasco-Demo-2026!"
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab:8929'
+        registry_external_url 'http://gitlab:5050'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+        puma['worker_processes'] = 0
+        sidekiq['concurrency'] = 5
+        prometheus_monitoring['enable'] = false
+        gitlab_rails['usage_ping_enabled'] = false
+        gitlab_kas['enable'] = false
+    ports:
+      - "8929:8929"
+      - "5050:5050"
+    shm_size: 256m
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+
+  runner:
+    image: gitlab/gitlab-runner:alpine-v19.4.1
+    security_opt:
+      - label=disable   # Podman（Fedora VM）的 SELinux 會擋掛進來的 socket
+    volumes:
+      - runner-config:/etc/gitlab-runner
+      - ${CONTAINER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+
+  # deploy-dev／qa／poc 部署出來的 DeployLog 共用這台 DB（labdb／labdb_qa／labdb_poc，同 Lab 的 mock-db）
+  # 不對外開 port：上課時 Lab 的 mock-db 要用 5432
+  demo-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpass-demo   # 8 字元以上：GitLab Masked 變數的長度限制
+      POSTGRES_DB: labdb
+    volumes:
+      - ../../mock-services/mock-db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  runner-config:
+
+networks:
+  default:
+    name: ci-demo

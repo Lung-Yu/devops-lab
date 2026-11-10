@@ -1,7 +1,7 @@
 # 手把手：Java 組加碼——用 Spring Boot 再做一次
 
 > DevOps 實作課｜Day 2 加碼／課後｜同一套觀念，換成 Java Spring Boot
-> 前面六個模組都用 .NET 的 DeployLog 練習。這一份用一個很小的 Spring Boot 專案（`assets/spring-demo/`），把 **M2 組態、M4 預檢與健康檢查、M5 結構化日誌、M6 Schema 版本管理** 再做一次：每一步都對照「DeployLog 是怎麼做的」，讓 Java 背景的同學知道回到自己的專案要改哪裡。
+> 前面六個模組都用 .NET 的 DeployLog 練習。這一份用一個很小的 Spring Boot 專案（`apps/java-spring-demo/`），把 **M2 組態、M4 預檢與健康檢查、M5 結構化日誌、M6 Schema 版本管理** 再做一次：每一步都對照「DeployLog 是怎麼做的」，讓 Java 背景的同學知道回到自己的專案要改哪裡。
 > **只需要 Docker**，不用裝 JDK 或 Maven。每一步大約 5 分鐘，可以挑想看的做，但步驟 0～2 要先做。
 
 ---
@@ -23,7 +23,7 @@
 ## 這個專案長什麼樣子
 
 ```text
-assets/spring-demo/
+apps/java-spring-demo/
 ├── pom.xml                                  套件清單（Spring Boot 3.4.1、Java 17、Flyway、PostgreSQL）
 ├── Dockerfile                               兩階段：Maven 編譯 → 只放 JRE 執行
 ├── README.md                                精簡版說明（內容同這份）
@@ -53,7 +53,7 @@ flowchart LR
 
 ## 步驟 0：前置確認
 
-以下指令都在 `assets/` 目錄下執行。Windows 用 **PowerShell**（不要用 cmd 或 Git Bash），macOS 用終端機。
+以下指令都在 `devops-lab/` 根目錄下執行。Windows 用 **PowerShell**（不要用 cmd 或 Git Bash），macOS 用終端機。
 
 ```bash
 docker compose up -d mock-db mock-external-api
@@ -85,7 +85,7 @@ $H = @('--add-host=host.docker.internal:host-gateway', '-e', 'DB_HOST=host.docke
 ## 步驟 1：建置 image
 
 ```bash
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 ```
 
 第一次約 2～5 分鐘（要下載 Maven、JDK 和套件），之後只改程式的話幾十秒。
@@ -132,14 +132,14 @@ curl.exe http://localhost:8080/actuator/health
 
 **對照 DeployLog**：
 
-| | DeployLog（.NET） | spring-demo（Java） |
+| | DeployLog（.NET） | apps/java-spring-demo（Java） |
 |---|---|---|
 | 讀哪份設定 | `--env-file .env.poc` | **同一份** `--env-file .env.poc` |
 | 告訴程式現在是哪個環境 | `.env` 裡的 `ASPNETCORE_ENVIRONMENT=POC` | `-e SPRING_PROFILES_ACTIVE=poc`（Spring 不認 `ASPNETCORE_ENVIRONMENT`） |
 | 環境專屬設定檔 | `appsettings.POC.json` | `application-poc.yml` |
 | 設定檔怎麼讀環境變數 | 環境變數直接蓋掉同名設定 | yml 裡寫 `${DB_HOST}` |
 
-打開 `spring-demo/src/main/resources/application.yml` 看一下：
+打開 `apps/java-spring-demo/src/main/resources/application.yml` 看一下：
 
 ```yaml
 spring:
@@ -246,7 +246,7 @@ Binding to target demo.App$AppProperties failed:
 exit code: 1
 ```
 
-**程式在哪裡**：`spring-demo/src/main/java/demo/App.java`
+**程式在哪裡**：`apps/java-spring-demo/src/main/java/demo/App.java`
 
 ```java
 @Validated                                              // 啟動時要驗證
@@ -357,17 +357,17 @@ docker compose exec mock-db psql -U labuser -d labdb_poc -c "SELECT version, des
 
 **你應該看到**：三列。第一列 `<< Flyway Schema Creation >>` 是 Flyway 建 `spring_demo` schema 的紀錄；接著版本 1 和 2，各有一個 `checksum` 數字，`success` 是 `t`。
 
-**現在故意改 V2**：用編輯器（記事本、VS Code 都可以）打開 `spring-demo/src/main/resources/db/migration/V2__add_order_status.sql`，把 `'NEW'` 改成 `'PENDING'`，存檔。重建 image 再啟動：
+**現在故意改 V2**：用編輯器（記事本、VS Code 都可以）打開 `apps/java-spring-demo/src/main/resources/db/migration/V2__add_order_status.sql`，把 `'NEW'` 改成 `'PENDING'`，存檔。重建 image 再啟動：
 
 ```bash
 # bash
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 docker run --rm --env-file .env.poc -e SPRING_PROFILES_ACTIVE=poc "${H[@]}" deploylog-spring
 ```
 
 ```powershell
 # PowerShell
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 docker run --rm --env-file .env.poc -e SPRING_PROFILES_ACTIVE=poc @H deploylog-spring
 ```
 
@@ -387,8 +387,8 @@ Migration checksum mismatch for migration version 2
 
 ```bash
 # 用 git clone 的：一行還原（Windows、macOS 相同）
-git checkout -- spring-demo/src/main/resources/db/migration/V2__add_order_status.sql
-docker build -t deploylog-spring spring-demo
+git checkout -- apps/java-spring-demo/src/main/resources/db/migration/V2__add_order_status.sql
+docker build -t deploylog-spring apps/java-spring-demo
 ```
 
 用 zip 解壓的沒有 git：手動把 `'PENDING'` 改回 `'NEW'` 存檔，再 `docker build`。
@@ -432,7 +432,7 @@ docker compose exec mock-db psql -U labuser -d labdb_qa -c "\dn"
 ```bash
 # bash
 docker run --rm --add-host=host.docker.internal:host-gateway \
-  -v "$PWD/spring-demo/src/main/resources/db/migration:/flyway/sql" \
+  -v "$PWD/apps/java-spring-demo/src/main/resources/db/migration:/flyway/sql" \
   flyway/flyway:10 \
   -url=jdbc:postgresql://host.docker.internal:5432/labdb_qa \
   -user=labuser -password=labpass -schemas=spring_demo migrate
@@ -441,7 +441,7 @@ docker run --rm --add-host=host.docker.internal:host-gateway \
 ```powershell
 # PowerShell（行尾是反引號 `，後面不能有空白）
 docker run --rm --add-host=host.docker.internal:host-gateway `
-  -v "${PWD}/spring-demo/src/main/resources/db/migration:/flyway/sql" `
+  -v "${PWD}/apps/java-spring-demo/src/main/resources/db/migration:/flyway/sql" `
   flyway/flyway:10 `
   -url=jdbc:postgresql://host.docker.internal:5432/labdb_qa `
   -user=labuser -password=labpass -schemas=spring_demo migrate
@@ -461,12 +461,12 @@ Successfully applied 2 migrations to schema "spring_demo", now at version v2
 
 **如果不是這樣**：
 - `Unable to obtain connection` → mock-db 沒開，或少了 `--add-host`
-- PowerShell 說找不到路徑、或 migrate 說 `No migrations found` → 確認目前位置是 `assets/`，而且用的是 PowerShell 不是 Git Bash
+- PowerShell 說找不到路徑、或 migrate 說 `No migrations found` → 確認目前位置是 `devops-lab/`，而且用的是 PowerShell 不是 Git Bash
 - `Migration checksum mismatch` → 步驟 6 的 V2 沒改回來
 
 **對照 DeployLog**：
 
-| | DeployLog（.NET） | spring-demo（Java） |
+| | DeployLog（.NET） | apps/java-spring-demo（Java） |
 |---|---|---|
 | 預設行為 | 網站啟動**不**碰 Schema | 網站啟動**會**自動 migrate |
 | 單獨跑 migrate | `docker run … keypasco-lab-api migrate` | Flyway CLI image（或自己在 `main` 加 `migrate` 參數，見 [08 §3](08-app-design-for-ops.md#3-migration-是獨立指令)） |
@@ -479,7 +479,7 @@ Successfully applied 2 migrations to schema "spring_demo", now at version v2
 
 ## 步驟 8（選做）：少一個冒號，預檢就失效（M4）
 
-打開 `spring-demo/src/main/resources/application.yml`，最後一行：
+打開 `apps/java-spring-demo/src/main/resources/application.yml`，最後一行：
 
 ```yaml
   external-api-url: ${EXTERNAL_API_URL:}
@@ -489,13 +489,13 @@ Successfully applied 2 migrations to schema "spring_demo", now at version v2
 
 ```bash
 # bash
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 docker run --rm -e SPRING_PROFILES_ACTIVE=dev -e DB_PORT=5432 -e DB_NAME=labdb -e DB_USER=labuser -e DB_PASSWORD=labpass "${H[@]}" deploylog-spring
 ```
 
 ```powershell
 # PowerShell
-docker build -t deploylog-spring spring-demo
+docker build -t deploylog-spring apps/java-spring-demo
 docker run --rm -e SPRING_PROFILES_ACTIVE=dev -e DB_PORT=5432 -e DB_NAME=labdb -e DB_USER=labuser -e DB_PASSWORD=labpass @H deploylog-spring
 ```
 
@@ -507,7 +507,7 @@ docker run --rm -e SPRING_PROFILES_ACTIVE=dev -e DB_PORT=5432 -e DB_NAME=labdb -
 
 **想一想**：這跟 M4 的 `start-naive.sh` 哪裡像？——**看起來啟動了，其實設定是錯的**，要等到真的去呼叫外部服務才爆。寫 `${變數:}`（給空預設值）才能讓必填檢查真的生效。
 
-做完把冒號加回去（或 `git checkout -- spring-demo/src/main/resources/application.yml`），再 `docker build -t deploylog-spring spring-demo`。
+做完把冒號加回去（或 `git checkout -- apps/java-spring-demo/src/main/resources/application.yml`），再 `docker build -t deploylog-spring apps/java-spring-demo`。
 
 ---
 
@@ -553,7 +553,7 @@ docker run --rm -e SPRING_PROFILES_ACTIVE=dev -e DB_PORT=5432 -e DB_NAME=labdb -
 
 ```bash
 # macOS：變數寫在指令前面，只對這一次執行有效
-cd spring-demo
+cd apps/java-spring-demo
 mvn -DskipTests package
 DB_HOST=localhost DB_PORT=5432 DB_NAME=labdb DB_USER=labuser DB_PASSWORD=labpass \
 EXTERNAL_API_URL=http://localhost:8081 SPRING_PROFILES_ACTIVE=dev \
@@ -562,7 +562,7 @@ java -jar target/deploylog-spring-1.0.0.jar
 
 ```powershell
 # Windows（PowerShell）：$env:名稱 設定的變數只在這個視窗有效
-cd spring-demo
+cd apps/java-spring-demo
 mvn -DskipTests package
 $env:DB_HOST="localhost"; $env:DB_PORT="5432"; $env:DB_NAME="labdb"
 $env:DB_USER="labuser"; $env:DB_PASSWORD="labpass"
@@ -584,4 +584,4 @@ java -jar target\deploylog-spring-1.0.0.jar
 - [ ] 用 `SPRING_FLYWAY_ENABLED=false` 啟動、再用 Flyway CLI 單獨 migrate 過
 - [ ] 說得出 yml 寫 `${X}` 和 `${X:}` 的差別
 
-**帶走一句話**：DeployLog 和 spring-demo 寫法完全不同，做的事情一模一樣——**設定從外面來、缺了就不啟動、活著和能接客分開回報、log 是機器讀得懂的欄位、Schema 有版本而且單獨升級。** 回到自己的專案，不管什麼語言，就檢查這五件事。
+**帶走一句話**：DeployLog 和 apps/java-spring-demo 寫法完全不同，做的事情一模一樣——**設定從外面來、缺了就不啟動、活著和能接客分開回報、log 是機器讀得懂的欄位、Schema 有版本而且單獨升級。** 回到自己的專案，不管什麼語言，就檢查這五件事。

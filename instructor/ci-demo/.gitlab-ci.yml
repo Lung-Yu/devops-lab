@@ -1,0 +1,221 @@
+# .gitlab-ci.yml — .NET 10 build & publish pipeline（課程示範專案；跟 labs/m3-ci-pipeline/gitlab-ci-dotnet-example.yml 同一套，另加 secrets-demo、deploy、release）
+# 對應 Module 3：自動化打包與持續整合
+# 教學重點：不管誰的機器、哪個 CI runner 執行，編出來的產物都要一樣（Dependency 鎖版本）
+# 前提：
+#   - csproj（或 Directory.Build.props）設 <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>，
+#     並把各專案的 packages.lock.json commit 進 repo。沒有 lock file 時 --locked-mode 不會報錯，等於沒鎖。
+#   - 測試專案要加 JunitXml.TestLogger 套件，下面的 --logger "junit;..." 才能用。
+#   - Runner 要開 privileged，docker-build job 的 dind 才跑得起來。
+
+stages:
+  - build
+  - test
+  - package
+  - docker
+  - deploy
+  - release
+
+variables:
+  IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+  # build image 用明確 tag；要做到完全可重現，改成 digest（mcr.microsoft.com/dotnet/sdk:10.0@sha256:...）
+  DOTNET_SDK_IMAGE: "mcr.microsoft.com/dotnet/sdk:10.0"
+
+build:
+  stage: build
+  image: $DOTNET_SDK_IMAGE
+  script:
+    # 依 packages.lock.json 還原；lock file 跟專案宣告對不上就直接失敗（NU1004），不會偷偷升版
+    - dotnet restore --locked-mode
+    - dotnet build -c Release --no-restore
+  artifacts:
+    paths:
+      - "**/bin/Release/"
+      # obj/ 一定要帶，而且後面每個 job 都要先 restore（新 job 的 NuGet cache 是空的）。
+      # 實測（SDK 10）：少了 obj/ 或沒 restore，dotnet publish 會失敗（NETSDK1004／NETSDK1064），
+      # dotnet test --no-build 更糟——一個測試都沒跑，卻 exit 0
+      - "**/obj/"
+    expire_in: 1 hour
+
+build-frontend:
+  stage: build
+  image: node:22-alpine
+  script:
+    # 前端也一樣鎖版本：npm ci 只照 package-lock.json 裝，跟 package.json 對不上就失敗
+    - cd frontend
+    - npm ci --no-audit --no-fund
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 hour
+
+test:
+  stage: test
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - dotnet restore --locked-mode
+    - dotnet test -c Release --no-build --logger "junit;LogFilePath=../test-results.xml"
+  artifacts:
+    when: always          # 測試失敗那次的報告最重要，不能被丟掉
+    reports:
+      junit: "**/test-results.xml"
+
+publish:
+  stage: package
+  image: $DOTNET_SDK_IMAGE
+  script:
+    # Immutable Artifact 的第一步：這裡產出的東西，後面環境都直接用，不重新編譯
+    # 指定要發布的專案（路徑依實際 repo 調整）；對整個 solution 加 -o 會把測試專案也混進來
+    - dotnet restore --locked-mode
+    - dotnet publish src/Api/Api.csproj -c Release -o ./publish --no-build
+    # 前端建置好的靜態檔放進 wwwroot：前後端是同一份產物、同一個 image
+    - cp -R frontend/dist publish/wwwroot
+  artifacts:
+    paths:
+      - publish/
+    expire_in: 1 week
+
+docker-build:
+  stage: docker
+  image: docker:27
+  services:
+    - name: docker:27-dind
+      command: ["--insecure-registry=gitlab:5050"]   # 只有本機示範環境需要（registry 沒有 TLS）
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    # Dockerfile 只把 publish job 產出的 publish/ 複製進 aspnet runtime image（FROM aspnet:10.0 + COPY publish/ .），
+    # 不在 Dockerfile 裡重新編譯——image 裡就是測過的那份產物（Immutable Artifact）。
+    # Lab 範例專案的 Dockerfile 是多階段、從原始碼編譯，那是因為課堂沒有 CI；有 CI 時用上面這種寫法。
+    - docker build -t "$IMAGE_TAG" .
+    - docker push "$IMAGE_TAG"
+    # 版本號控管：commit SHA 當 image tag，追溯「這個版本是哪次 commit 建的」；
+    # 打 git tag 的正式版，同一個 image 再多掛一個 tag 名稱（不重新 build）
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+        docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# 【課堂討論】敏感資訊安全注入（對應 Module 2）：
+# - $CI_REGISTRY_USER / $CI_REGISTRY_PASSWORD 是 GitLab「預先定義」的變數：
+#   每個 job 自動產生、job 結束就失效，不用自己設，也不會寫進 repo。
+# - 自己的機密（例如 NUGET_API_KEY、部署機的 DEPLOY_SSH_KEY、DB 密碼）才到
+#   Settings → CI/CD → Variables 新增，勾選：
+#     Masked    → job log 裡印出來會變成 [MASKED]（值要符合遮蔽格式限制，例如至少 8 字元、單行）
+#     Protected → 只有 protected branch / tag 上的 pipeline 拿得到，
+#                 一般 MR 分支改 .gitlab-ci.yml 也拿不到正式環境的密碼
+# - Masked 只遮 log，不是加密：job 裡的程式仍讀得到明文，所以 Protected 更重要。
+
+# 【示範】Masked 變數印到 log 會變成 [MASKED]；Protected 變數只有 protected 分支／tag 拿得到
+secrets-demo:
+  stage: test
+  image: alpine:3.20
+  script:
+    - echo "部署帳號：${DEPLOY_USER}"
+    - echo "部署密碼：${DEPLOY_PASSWORD}"
+    - 'if [ -z "${PROD_DB_PASSWORD}" ]; then echo "這個分支拿不到 PROD_DB_PASSWORD（Protected）"; else echo "PROD_DB_PASSWORD 已注入：${PROD_DB_PASSWORD}"; fi'
+
+# ── 部署：環境切換管理（Operate → Environments）────────────────────────────
+# 同一個 image（$IMAGE_TAG，commit SHA）依序推到 dev → qa → poc：只換 environment，不重新 build。
+# 每個環境的設定不寫在這裡：Settings → CI/CD → Variables 用「Environment scope」各設一組
+#   （DB_NAME、ASPNETCORE_ENVIRONMENT 各有 dev／qa／poc 三個值），job 宣告 environment: qa，GitLab 只注入 qa 那組
+#   ——就是 Module 2 的 .env.dev／.env.qa／.env.poc，改由 GitLab 保管，有權限控管和異動紀錄。
+# Environments 頁面：每個環境現在跑哪個 commit、誰什麼時候部署的；舊的那筆按 Rollback＝用那次的 image 重新部署一次。
+.deploy:
+  stage: deploy
+  image: docker:27
+  tags: [deploy]   # 只給部署用 Runner 跑（真實環境：裝在部署機上的那台 Runner）
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock   # 本機示範：講師電腦的 Docker 就是「部署機」
+  before_script:
+    # 本機示範的 registry 沒有 TLS、部署機的 Docker 也認不得 gitlab 這個主機名，所以用 skopeo 在 job 裡拉 image 再載入；
+    # 真實環境這兩行就是在部署機上 docker login ＋ docker pull "$IMAGE_TAG"
+    - apk add -q --no-cache skopeo
+    - skopeo copy -q --src-tls-verify=false --src-creds "$CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD" "docker://$IMAGE_TAG" "docker-daemon:$IMAGE_TAG"
+  script:
+    - echo "部署 $IMAGE_TAG 到 $CI_ENVIRONMENT_NAME（ASPNETCORE_ENVIRONMENT=$ASPNETCORE_ENVIRONMENT、DB_NAME=$DB_NAME）"
+    - |
+      set -e
+      APP="deploylog-$CI_ENVIRONMENT_NAME"
+      ENVS="-e ASPNETCORE_ENVIRONMENT=$ASPNETCORE_ENVIRONMENT -e DB_HOST=$DB_HOST -e DB_PORT=5432 -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD"
+      # Module 6：先升級 Schema；失敗就停在這裡，舊版本繼續跑
+      docker run --rm --network ci-demo $ENVS "$IMAGE_TAG" migrate
+      # 換版（示範用：先停舊的再起新的，會中斷幾秒；正式環境用藍綠或滾動更新）
+      docker rm -f "$APP" > /dev/null 2>&1 || true
+      docker run -d --name "$APP" --network ci-demo -p "$HOST_PORT:5000" --restart unless-stopped $ENVS "$IMAGE_TAG" > /dev/null
+      # Module 4：部署完要驗證，/health/ready 沒回 200 就讓 job 失敗（紅燈＝這次部署沒成功）
+      for i in $(seq 1 30); do
+        if wget -q -O /dev/null "http://$APP:5000/health/ready"; then echo "$APP ready：http://localhost:$HOST_PORT"; exit 0; fi
+        sleep 2
+      done
+      echo "$APP 60 秒內沒有 ready"; docker logs --tail 30 "$APP"; exit 1
+
+# main 一合併就自動上 dev
+deploy-dev:
+  extends: .deploy
+  variables:
+    HOST_PORT: "8001"
+  environment:
+    name: dev
+    url: http://localhost:8001
+    deployment_tier: development
+  resource_group: dev   # 同一個環境一次只跑一個部署，兩條 pipeline 不會互蓋
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# QA 要有人按「▶」放行才部署（同一個 image，dev 驗過再往下推）
+deploy-qa:
+  extends: .deploy
+  variables:
+    HOST_PORT: "8002"
+  environment:
+    name: qa
+    url: http://localhost:8002
+    deployment_tier: testing
+  resource_group: qa
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true   # 沒按放行，pipeline 也算完成，不會卡住
+
+# POC（客戶現場）只收打了 tag 的正式版本，而且要人放行
+deploy-poc:
+  extends: .deploy
+  variables:
+    HOST_PORT: "8003"
+  environment:
+    name: poc
+    url: http://localhost:8003
+    deployment_tier: staging
+  resource_group: poc
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
+      allow_failure: true
+
+# ── 發版：Deploy → Releases ─────────────────────────────────────────────
+# 打 git tag 就產生一筆 Release：版本說明＋這個版本的 image，「v1.0.0 是哪個 commit、哪個 image」一頁看完。
+# 對應 slide 28–29：版本號控管與 Release Artifacts
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  needs: [docker-build]
+  script:
+    - echo "建立 Release $CI_COMMIT_TAG（commit $CI_COMMIT_SHORT_SHA）"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: "DeployLog $CI_COMMIT_TAG"
+    # 不要用反引號：release 內容會經過 shell，反引號會被當成指令執行
+    description: "由 commit $CI_COMMIT_SHORT_SHA 建置。\n\nimage：$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG（跟 $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA 是同一份，沒有重新 build）"
+    assets:
+      links:
+        - name: "Container image $CI_COMMIT_TAG"
+          url: "$CI_PROJECT_URL/container_registry"
+          link_type: image
+  rules:
+    - if: $CI_COMMIT_TAG

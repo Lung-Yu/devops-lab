@@ -18,12 +18,12 @@
 
 ---
 
-## 0. 事前準備（講師電腦，約 15 分鐘）
+## 0. 事前準備（講師電腦，第一次約 25 分鐘）
 
 1. **啟動示範 GitLab**（第一次約 10 分鐘）
 
    ```bash
-   cd wiki/workspace/keypasco-devops-course/ci-demo
+   cd instructor/ci-demo        # 在 devops-lab 根目錄下；說明見該資料夾的 README
    docker compose up -d
    ```
 
@@ -35,7 +35,7 @@
    echo "127.0.0.1 gitlab" | sudo tee -a /etc/hosts
    ```
 
-3. **建立示範內容**（約 5 分鐘，4 條 pipeline 跑完）
+3. **建立示範內容**（setup.sh 跑完後，4 條 pipeline 還要約 12–13 分鐘才跑完）
 
    ```bash
    bash setup.sh

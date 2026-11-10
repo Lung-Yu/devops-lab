@@ -95,7 +95,7 @@ flowchart LR
 
 ### 範例網站 DeployLog 的兩把鎖
 
-這兩天用的範例網站（`lab-project/`）前端是 Vue、後端是 .NET，兩邊**各鎖一把**。打開 `lab-project/Dockerfile` 就看得到：
+這兩天用的範例網站（`apps/dotnet-deploylog/`）前端是 Vue、後端是 .NET，兩邊**各鎖一把**。打開 `apps/dotnet-deploylog/Dockerfile` 就看得到：
 
 ```dockerfile
 # 第一階段：前端（npm）
@@ -161,7 +161,7 @@ Martin Fowler〈Continuous Integration〉（2006，2024 年改版）列了十幾
 
 課程提供兩份範例 pipeline（Part A 會一行一行讀）：
 
-| 階段 | .NET 版（`gitlab-ci-dotnet-example.yml`） | Java 版（`gitlab-ci-java-war-example.yml`） |
+| 階段 | .NET 版（`labs/m3-ci-pipeline/gitlab-ci-dotnet-example.yml`） | Java 版（`labs/m3-ci-pipeline/gitlab-ci-java-war-example.yml`） |
 |------|---------|---------|
 | build | `dotnet restore --locked-mode` → `dotnet build` | `mvn compile`（`.m2` cache 加速） |
 | test | `dotnet test` | `mvn test` |
@@ -300,14 +300,14 @@ CI 手上有原始碼、有部署憑證、能推 image——被入侵的話，�
 
 **事前確認**
 
-- 終端機已經在 `assets/` 資料夾裡（解壓 `keypasco-devops-lab.zip` 的地方）。
+- 終端機已經在 `devops-lab/` 資料夾裡（解壓 `keypasco-devops-lab.zip` 的地方）。
 - Day 1 M2 已經 build 好 image：
 
   ```bash
   docker image ls keypasco-lab-api
   ```
 
-  看得到一行 `keypasco-lab-api` 就好。沒有的話重 build 一次（約 1–3 分鐘，要能連網路）：`docker build -t keypasco-lab-api lab-project`。
+  看得到一行 `keypasco-lab-api` 就好。沒有的話重 build 一次（約 1–3 分鐘，要能連網路）：`docker build -t keypasco-lab-api apps/dotnet-deploylog`。
 
 > 這一部分的 `docker` 指令在 **PowerShell 和 bash 完全一樣**；不一樣的只有讀檔（`grep`／`Select-String`）和 `curl`（PowerShell 要打 `curl.exe`），會分開寫。
 > **你的電腦不需要安裝 .NET SDK 或 Maven**，這一部分也不會叫你跑 `dotnet`、`mvn`。
@@ -316,9 +316,9 @@ CI 手上有原始碼、有部署憑證、能推 image——被入侵的話，�
 
 ## 步驟 1：一行一行讀 .NET 版 pipeline
 
-用編輯器（VS Code、記事本都可以）打開 `gitlab-ci-dotnet-example.yml`，對照下表往下讀。
+用編輯器（VS Code、記事本都可以）打開 `labs/m3-ci-pipeline/gitlab-ci-dotnet-example.yml`，對照下表往下讀。
 
-> **路徑說明**：這份檔案寫的是講師示範專案的目錄結構（`src/Api/Api.csproj`、`tests/`、`frontend/`），跟你手上的 `lab-project/`（`MyApi.csproj` 在根目錄、沒有測試專案）**不一樣**。搬到自己專案時，路徑依實際 repo 調整。
+> **路徑說明**：這份檔案寫的是講師示範專案的目錄結構（`src/Api/Api.csproj`、`tests/`、`frontend/`），跟你手上的 `apps/dotnet-deploylog/`（`MyApi.csproj` 在根目錄、沒有測試專案）**不一樣**。搬到自己專案時，路徑依實際 repo 調整。
 
 ### 1-1 開頭註解：用之前要先準備好的三件事（第 1–8 行）
 
@@ -433,7 +433,7 @@ variables:
 
 ## 步驟 2：一行一行讀 Java war 版 pipeline
 
-打開 `gitlab-ci-java-war-example.yml`。**只看跟 .NET 版不一樣的地方**，其餘「跟剛才一樣」。
+打開 `labs/m3-ci-pipeline/gitlab-ci-java-war-example.yml`。**只看跟 .NET 版不一樣的地方**，其餘「跟剛才一樣」。
 
 | 行 | 內容 | 白話 |
 |----|------|------|
@@ -472,27 +472,27 @@ variables:
 
 ## 步驟 3：親眼看看 lock file
 
-在 `assets/` 資料夾裡：
+在 `devops-lab/` 資料夾裡：
 
 **3-1 專案有沒有開 lock file？**
 
 PowerShell：
 
 ```powershell
-Select-String RestorePackagesWithLockFile lab-project\MyApi.csproj
+Select-String RestorePackagesWithLockFile apps\dotnet-deploylog\MyApi.csproj
 ```
 
 你應該看到：
 
 ```
-lab-project\MyApi.csproj:8:    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+apps\dotnet-deploylog\MyApi.csproj:8:    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 ```
 <!-- 未驗證：PowerShell 尚未在 Windows 實測（第 8 行已用 bash 確認） -->
 
 bash：
 
 ```bash
-grep RestorePackagesWithLockFile lab-project/MyApi.csproj
+grep RestorePackagesWithLockFile apps/dotnet-deploylog/MyApi.csproj
 ```
 
 你應該看到：
@@ -506,13 +506,13 @@ grep RestorePackagesWithLockFile lab-project/MyApi.csproj
 PowerShell：
 
 ```powershell
-Get-Content lab-project\packages.lock.json -TotalCount 8
+Get-Content apps\dotnet-deploylog\packages.lock.json -TotalCount 8
 ```
 
 bash：
 
 ```bash
-head -n 8 lab-project/packages.lock.json
+head -n 8 apps/dotnet-deploylog/packages.lock.json
 ```
 
 你應該看到：
@@ -535,13 +535,13 @@ head -n 8 lab-project/packages.lock.json
 PowerShell：
 
 ```powershell
-Get-Content lab-project\frontend\package-lock.json -TotalCount 12
+Get-Content apps\dotnet-deploylog\frontend\package-lock.json -TotalCount 12
 ```
 
 bash：
 
 ```bash
-head -n 12 lab-project/frontend/package-lock.json
+head -n 12 apps/dotnet-deploylog/frontend/package-lock.json
 ```
 
 你應該看到：
@@ -561,15 +561,15 @@ head -n 12 lab-project/frontend/package-lock.json
         "vue-router": "4.6.4"
 ```
 
-這兩個檔案都在版控裡；`lab-project/Dockerfile` 用 `dotnet restore --locked-mode` 和 `npm ci` 只照它們裝。
+這兩個檔案都在版控裡；`apps/dotnet-deploylog/Dockerfile` 用 `dotnet restore --locked-mode` 和 `npm ci` 只照它們裝。
 
 ---
 
 ## 步驟 4：比較兩種 Dockerfile
 
-打開 `lab-project/Dockerfile`。它有**三個階段**：Node 建前端 → .NET SDK 編譯後端 → aspnet runtime 只放成品。也就是**在 Dockerfile 裡從原始碼編譯**。
+打開 `apps/dotnet-deploylog/Dockerfile`。它有**三個階段**：Node 建前端 → .NET SDK 編譯後端 → aspnet runtime 只放成品。也就是**在 Dockerfile 裡從原始碼編譯**。
 
-CI 範例（`gitlab-ci-dotnet-example.yml` 第 85–87 行註解）用的是另一種寫法，講師示範專案的 Dockerfile 只有這樣：
+CI 範例（`labs/m3-ci-pipeline/gitlab-ci-dotnet-example.yml` 第 85–87 行註解）用的是另一種寫法，講師示範專案的 Dockerfile 只有這樣：
 
 ```dockerfile
 # 只打包 CI publish job 產出的 publish/：image 裡就是測過的那份產物，不在這裡重新編譯
@@ -581,7 +581,7 @@ EXPOSE 5000
 ENTRYPOINT ["dotnet", "Api.dll"]
 ```
 
-| | `lab-project/Dockerfile`（你手上的） | CI 版 Dockerfile |
+| | `apps/dotnet-deploylog/Dockerfile`（你手上的） | CI 版 Dockerfile |
 |---|---|---|
 | 在哪裡編譯 | Dockerfile 裡（SDK 階段） | CI 的 `build`／`publish` job |
 | image 裡放什麼 | Dockerfile 自己編出來的東西 | `publish` job 的產物，**跟測試跑的是同一份** |
@@ -669,7 +669,7 @@ Untagged: keypasco-lab-api:v1.0.0
 
 | 狀況 | 原因 | 處理 |
 |------|------|------|
-| `Error response from daemon: No such image: keypasco-lab-api:latest` | M2 的 image 還沒 build | `docker build -t keypasco-lab-api lab-project` |
+| `Error response from daemon: No such image: keypasco-lab-api:latest` | M2 的 image 還沒 build | `docker build -t keypasco-lab-api apps/dotnet-deploylog` |
 | `Conflict. The container name "/lab-api" is already in use` | 上一個 `lab-api` 沒刪 | `docker rm -f lab-api` 再跑一次 |
 | `port is already allocated`，或 curl 回 403（Mac） | 5000 被佔走 | 改用 5050（見上面提示） |
 | PowerShell 的 curl 印出一大堆欄位 | PowerShell 的 `curl` 是 `Invoke-WebRequest` | 打 `curl.exe`，或直接用瀏覽器開 |
@@ -855,14 +855,14 @@ PROD_DB_PASSWORD 已注入：[MASKED]
 
 ## 程式設計：程式要怎麼寫才支援
 
-「從產物反查 commit」要靠程式把版本寫進產物、再讀出來。`lab-project/Dockerfile` 在建置時寫入：
+「從產物反查 commit」要靠程式把版本寫進產物、再讀出來。`apps/dotnet-deploylog/Dockerfile` 在建置時寫入：
 
 ```dockerfile
 ARG APP_VERSION=1.0.0
 RUN dotnet publish -c Release -o /app --no-restore -p:InformationalVersion=$APP_VERSION
 ```
 
-`lab-project/Program.cs` 第 113–114 行在執行時讀出，經 `/api/system` 顯示在頁首：
+`apps/dotnet-deploylog/Program.cs` 第 113–114 行在執行時讀出，經 `/api/system` 顯示在頁首：
 
 ```csharp
 var version = Assembly.GetExecutingAssembly()

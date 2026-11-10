@@ -1,6 +1,6 @@
 #!/bin/bash
 # 預檢啟動腳本（學員起始檔）：把四個 TODO 補完，任一項失敗就 exit 1
-# 用法（在 assets/ 目錄下）：bash lab-m4-starter/start.sh .env.poc
+# 用法（在 devops-lab/ 根目錄下）：bash labs/m4-preflight/starter/start.sh .env.poc
 set -euo pipefail   # 任一指令失敗就停、用到未定義變數就停
 
 ENV_FILE="${1:-.env.poc}"

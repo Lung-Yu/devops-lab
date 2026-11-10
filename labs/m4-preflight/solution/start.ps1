@@ -1,5 +1,5 @@
 ﻿# 預檢啟動腳本（參考解答）：預檢全部通過，才啟動服務
-# 用法（在 assets\ 目錄下）：powershell -ExecutionPolicy Bypass -File solutions\start.ps1 .env.poc
+# 用法（在 devops-lab\ 根目錄下）：powershell -ExecutionPolicy Bypass -File labs\m4-preflight\solution\start.ps1 .env.poc
 param([string]$EnvFile = ".env.poc")
 $ErrorActionPreference = 'Stop'   # 任一指令失敗就停
 

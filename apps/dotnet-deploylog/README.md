@@ -48,11 +48,11 @@
 
 ## 跑起來
 
-在 `assets/` 目錄下：
+在 `devops-lab/` 根目錄下：
 
 ```bash
 docker compose up -d mock-db                        # PostgreSQL
-docker build -t keypasco-lab-api lab-project        # 第一次約 1–3 分鐘（要下載 node、.NET image 與套件）
+docker build -t keypasco-lab-api apps/dotnet-deploylog        # 第一次約 1–3 分鐘（要下載 node、.NET image 與套件）
 
 # 1. 先建資料表（Schema 變更是獨立的一步，不在服務啟動時偷偷做）
 docker run --rm --env-file .env.dev --add-host=host.docker.internal:host-gateway \

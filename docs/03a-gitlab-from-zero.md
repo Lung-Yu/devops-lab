@@ -27,7 +27,7 @@
 
 - **公司已經有 GitLab**（例如 `https://gitlab.你們公司.com`）：跳過 Part 0，直接從 [Part 1](#part-1登入建專案推程式) 開始。文件裡的 `http://gitlab:8929` 換成公司的網址，`student` 換成你的帳號。
 - **沒有 GitLab**：照 Part 0 在自己電腦上架一台（約 30 分鐘，大部分時間在等它開機）。
-- 範例程式在學員 zip 解壓後的 **`ci-sample-repo/`** 資料夾（跟 `assets/`、`docs/` 放在一起）。它就是一個 .NET API ＋前端的小專案，**沒有** `.gitlab-ci.yml`——pipeline 由你在 Part 3 自己加。
+- 範例程式在學員 zip 解壓後的 **`labs/m3-ci-pipeline/sample-repo/`** 資料夾（在 `devops-lab` 裡，跟 `apps/`、`docs/` 放在一起）。它就是一個 .NET API ＋前端的小專案，**沒有** `.gitlab-ci.yml`——pipeline 由你在 Part 3 自己加。
 - 每一步的格式：**操作** → 截圖 → **你應該看到** → **如果不是這樣** → **為什麼**（不是每步都需要全部五項）。
 
 ---
@@ -271,7 +271,7 @@ Password 區塊寫著「Reset link will be generated and sent to the user」—�
 - 按 Create project 沒反應、欄位出現紅字：namespace 沒選。
 - 勾了 README 也建好了：專案裡已經有一個 commit，等一下 push 會被拒絕（`rejected … fetch first`）。最簡單的處理是刪掉專案重建：Settings → General → 最下面 Advanced → Delete project。
 
-**為什麼不要 README**：我們要把**已經存在的資料夾**（`ci-sample-repo`）推上來。遠端如果先有一個 README commit，兩邊的歷史對不上，就得先 pull 合併，多一道手續。
+**為什麼不要 README**：我們要把**已經存在的資料夾**（`labs/m3-ci-pipeline/sample-repo`）推上來。遠端如果先有一個 README commit，兩邊的歷史對不上，就得先 pull 合併，多一道手續。
 
 ![空專案頁，Add files 切到 HTTPS](images/gitlab0/017-empty-project-push.png)
 
@@ -321,10 +321,10 @@ GitLab 的 HTTPS push **不收登入密碼**，要用 **Personal access token**�
 
 ### 步驟 1-4：把範例程式推上去
 
-**操作**：終端機進到學員 zip 解壓出來的 `ci-sample-repo` 資料夾，照順序打：
+**操作**：終端機進到學員 zip 解壓出來的 `labs/m3-ci-pipeline/sample-repo` 資料夾，照順序打：
 
 ```bash
-cd ci-sample-repo
+cd labs/m3-ci-pipeline/sample-repo
 git init --initial-branch=main
 git config --local user.name "Lab Student"
 git config --local user.email "student@example.com"
@@ -490,7 +490,7 @@ Windows PowerShell 把每行結尾的 `\` 換成 `` ` ``（反引號），或全
 
 **操作**：
 
-1. 用編輯器打開學員 zip 裡的 **`assets/gitlab-ci-dotnet-example.yml`**（就是 M3 Part A 一行一行讀過的那份），全選複製。
+1. 用編輯器打開學員 zip 裡的 **`labs/m3-ci-pipeline/gitlab-ci-dotnet-example.yml`**（就是 M3 Part A 一行一行讀過的那份），全選複製。
 2. 回到 Pipeline editor，**全選刪掉範本**，貼上。
 3. 做下面**兩處修改**：
 
