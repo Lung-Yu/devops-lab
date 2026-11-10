@@ -16,6 +16,19 @@ docker compose version
 
 ## 2. 取得檔案，進到 `devops-lab`
 
+> **Day 1 已經跑過環境的人，先做這兩步**（第一次跑、或電腦被還原過的人跳過）：
+>
+> 1. 收掉 Day 1 的舊容器。在哪個資料夾執行都可以，看到 `No such container` 不用理它：
+>
+>    ```bash
+>    docker rm -f lab-api spring-api assets-mock-db-1 assets-mock-external-api-1
+>    ```
+>
+> 2. Day 1 的 `devops-lab` 資料夾（或解壓的 zip 資料夾）改名或刪掉，再照下面重新 clone。資料夾結構改過了，舊的不要 `git pull`，也不用再 `cd assets`。
+>
+> Day 1 的練習資料庫會清掉，第 6 步重新 migrate 即可。Day 1 build 好的 image 還在，第 5 步通常可以跳過。
+
+
 ```bash
 git clone https://github.com/Lung-Yu/devops-lab.git
 cd devops-lab
@@ -137,7 +150,7 @@ curl http://localhost:8080/actuator/health
 | `running scripts is disabled` | 照第 3 步的完整指令，不要直接打 `.\tools\selftest.ps1` |
 | `請在 devops-lab/ 根目錄下執行`、`no configuration file provided` | `cd` 回 `devops-lab` |
 | PowerShell 印出一大串 `StatusCode` | 改打 `curl.exe` |
-| `port is already allocated`（5432） | 暫停電腦上原本的 PostgreSQL |
+| `port is already allocated`（5432 或 8081） | 多半是 Day 1 的舊容器還在：執行第 2 步開頭的 `docker rm -f ...`；還是不行，暫停電腦上原本的 PostgreSQL |
 | Port 5000 被佔用（Mac 的 AirPlay） | 改成 `-p 5050:5000`，網址的 5000 改 5050 |
 | Port 8080 被佔用 | 改成 `-p 8090:8080`，網址的 8080 改 8090 |
 | `container name ... is already in use` | `docker rm -f lab-api`（Java 組是 `spring-api`），再執行一次 |
