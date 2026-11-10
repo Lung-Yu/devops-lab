@@ -432,7 +432,7 @@ docker compose exec mock-db psql -U labuser -d labdb_qa -c "\dn"
 ```bash
 # bash
 docker run --rm --add-host=host.docker.internal:host-gateway \
-  -v "$PWD/spring-demo/src/main/resources/db/migration:/flyway/sql" \
+  -v "$PWD/apps/java-spring-demo/src/main/resources/db/migration:/flyway/sql" \
   flyway/flyway:10 \
   -url=jdbc:postgresql://host.docker.internal:5432/labdb_qa \
   -user=labuser -password=labpass -schemas=spring_demo migrate
