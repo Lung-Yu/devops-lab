@@ -21,6 +21,8 @@
 
 部署到 dev／qa／poc 三個環境、一鍵 Rollback，接在這份後面：[03b-gitlab-environments-release.md](03b-gitlab-environments-release.md)。
 
+隔天回來 GitLab 打不開、pipeline 卡住、或找不到昨天推的專案：看 [03c Day 2 接回自己的 GitLab 和 Runner](03c-day2-reconnect-gitlab.md)。
+
 ---
 
 ## 開始前
@@ -1015,6 +1017,7 @@ PROD_DB_PASSWORD 已注入：[MASKED]
 | `docker-build`：`Cannot connect to the Docker daemon` | Runner 沒開特權模式 | 註冊時要有 `--docker-privileged` |
 | MR 紅燈還是能合併 | 沒開 Pipelines must succeed | 步驟 4-5 |
 | tag pipeline 拿不到 Protected 變數 | tag 沒保護 | Part 6 步驟 6-2 |
+| 隔天 GitLab 打不開、Runner Offline、找不到昨天的專案 | 電腦重開、容器沒起來；或重新 clone 了 devops-lab | [03c](03c-day2-reconnect-gitlab.md) |
 | 上完課要關掉 | — | `docker compose stop`（資料保留，下次 `docker compose start`）；連資料一起刪：`docker compose down -v` |
 
 ---

@@ -27,6 +27,8 @@ docker compose version
 > 2. Day 1 的 `devops-lab` 資料夾（或解壓的 zip 資料夾）改名或刪掉，再照下面重新 clone。資料夾結構改過了，舊的不要 `git pull`，也不用再 `cd assets`。
 >
 > Day 1 的練習資料庫會清掉，第 6 步重新 migrate 即可。Day 1 build 好的 image 還在，第 5 步通常可以跳過。
+>
+> Day 1 有照 03a 在自己電腦架 GitLab 的人：GitLab 不受影響，但如果打不開、pipeline 卡住、或找不到昨天推的專案，看 [03c](03c-day2-reconnect-gitlab.md)。
 
 
 ```bash

@@ -62,7 +62,7 @@ devops-lab/                  ← 所有指令都在這一層下
 |------|---------|-----------|------|
 | M1 可維運性思維 | 啟動 DeployLog，用三種角色逛一圈 | `apps/dotnet-deploylog/`、`docker-compose.yml` | [01](docs/01-m1-operability.md) |
 | M2 組態解耦 | 同一個 image，換 `.env` 就切換 Dev／QA／POC | `.env.dev`／`.env.qa`／`.env.poc` | [02](docs/02-m2-config.md) |
-| M3 CI Pipeline | 讀懂並寫出 `.gitlab-ci.yml`，推上 GitLab 跑 | `labs/m3-ci-pipeline/` | [03](docs/03-m3-ci-pipeline.md)、[03a](docs/03a-gitlab-from-zero.md)、[03b](docs/03b-gitlab-environments-release.md) |
+| M3 CI Pipeline | 讀懂並寫出 `.gitlab-ci.yml`，推上 GitLab 跑 | `labs/m3-ci-pipeline/` | [03](docs/03-m3-ci-pipeline.md)、[03a](docs/03a-gitlab-from-zero.md)、[03b](docs/03b-gitlab-environments-release.md)；Day 2 接回 GitLab：[03c](docs/03c-day2-reconnect-gitlab.md) |
 | M4 部署腳本與預檢 | 寫一支「環境不對就拒絕啟動」的腳本 | `labs/m4-preflight/` | [04](docs/04-m4-deploy-scripts.md) |
 | M5 日誌與排查 | 用追蹤編號從錯誤畫面找到那一行 log | `apps/dotnet-deploylog/` | [05](docs/05-m5-logging.md) |
 | M6 DB Schema 管理 | `migrate` 指令、打錯 DB 名稱被擋 | `apps/dotnet-deploylog/` | [06](docs/06-m6-db-migration.md) |
