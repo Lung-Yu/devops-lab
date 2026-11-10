@@ -23,6 +23,7 @@ flowchart LR
   M1 --> M2[02 M2<br/>組態解耦]
   M2 --> M3[03 M3<br/>CI Pipeline]
   M3 --> M3a[03a GitLab<br/>從 0 開始]
+  M3a --> M3c[03c Day 2<br/>接回 GitLab]
   M3a --> M3b[03b 環境切換<br/>與發版]
   M3b --> M4[04 M4<br/>部署腳本與預檢]
   M4 --> M5[05 M5<br/>日誌與排查]
@@ -39,6 +40,7 @@ flowchart LR
 | 02 | [M2 組態解耦與環境配置管理](02-m2-config.md) | **Lab**：同一個 image，不改程式、不重新編譯，切換 Dev／QA／POC 三個環境 | Day 1 |
 | 03 | [M3 自動化打包與持續整合](03-m3-ci-pipeline.md) | 讀懂 `.gitlab-ci.yml`（.NET、Java war）；看懂 pipeline、測試報告、版本號、機密注入 | Day 1 |
 | 03a | [GitLab 從 0 開始](03a-gitlab-from-zero.md) | 自己架一台 GitLab（公司已有就跳過）→ 建專案、推程式、註冊 Runner、Pipeline editor、測試失敗與 MR、CI 變數、tag、Container registry、Release，每個畫面都有截圖 | Day 1 |
+| 03c | [Day 2 接回自己的 GitLab 和 Runner](03c-day2-reconnect-gitlab.md) | 隔天 GitLab 打不開、pipeline 卡 Pending、找不到昨天推的專案：先判斷是哪一種，再照截圖接回來 | Day 2 開場 |
 | 03b | [GitLab 環境切換與發版](03b-gitlab-environments-release.md) | dev 自動部署、qa／poc 放行、一鍵 Rollback、Releases（講師示範） | Day 1–2 |
 | 04 | [M4 部署腳本與預檢機制](04-m4-deploy-scripts.md) | 寫出「環境不對就友善報錯、拒絕啟動」的預檢腳本（bash／PowerShell）；**Lab**：五種破壞全部擋下 | Day 1–2 |
 | 05 | [M5 維運友善的日誌與問題排查](05-m5-logging.md) | 分得清日誌等級；用追蹤編號從錯誤畫面找到那一行 JSON log | Day 2 |
